@@ -1,19 +1,49 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+	"pages": [
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app"
+				"navigationBarTitleText": "答题"
 			}
 		},
 		{
 			"path": "pages/relation/relation",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "关系"
+			}
+		},
+		{
+			"path": "pages/relation-manage/relation-manage",
+			"style": {
+				"navigationBarTitleText": "关系管理"
 			}
 		},
 		{
 			"path": "pages/user/user",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/question-record/question-record",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/answer-record/answer-record",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/question-list/question-list",
+			"style": {
+				"navigationBarTitleText": ""
+			}
+		},
+		{
+			"path": "pages/answer-list/answer-list",
 			"style": {
 				"navigationBarTitleText": ""
 			}
@@ -28,19 +58,27 @@
 	"uniIdRouter": {},
 	"tabBar": {
 		"color": "#9799a5",
-		"selectedColor": "#28b389",
+		"selectedColor": "#1890ff",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
 		"list": [
 			{
-				"text": "推荐",
-				"pagePath": "pages/index/index"
+				"text": "答题",
+				"pagePath": "pages/index/index",
+				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/home.png",
+				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/home.png"
 			},
 			{
 				"text": "关系",
-				"pagePath": "pages/relation/relation"
+				"pagePath": "pages/relation/relation",
+				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/handshake.png",
+				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/handshake.png"
 			},
 			{
 				"text": "我的",
-				"pagePath": "pages/user/user"
+				"pagePath": "pages/user/user",
+				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/user.png",
+				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/user.png"
 			}
 		]
 	}
