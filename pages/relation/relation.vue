@@ -37,7 +37,7 @@
 							<view class="remark">{{ item.remark || '' }}</view>
 						</view>
 						<view class="table-cell detail-cell">
-							<button class="detail-button" @click.stop="generateQuestion(item.id)">生成试题</button>
+							<button class="question-button" @click.stop="generateQuestion(item.id)">试题</button>
 						</view>
 					</view>
 				</view>
@@ -88,8 +88,8 @@
 	const loading = ref(false);
 	
 	// 生成试题状态
-	const showQuestionDialog = ref(false);
-	const generatingQuestion = ref(false);
+const showQuestionDialog = ref(false);
+const generatingQuestion = ref(false);
 	
 	// 跳转到关系管理页面
 const navigateToRelationManager = (id) => {
@@ -146,6 +146,7 @@ const navigateToQuestionRecord = () => {
 const closeQuestionDialog = () => {
 	showQuestionDialog.value = false;
 };
+
 	
 	// 方法定义
 	const queryPage = async() => {
@@ -410,28 +411,28 @@ const closeQuestionDialog = () => {
 		max-width: 100%;
 	}
 	
-	/* 详情按钮样式 */
-	.detail-button {
-			padding: 12rpx 24rpx;
-			background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
-			color: #fff;
-			border: none;
-			border-radius: 20rpx;
-			font-size: 24rpx;
-			font-weight: 600;
-			transition: all 0.3s ease;
-			box-shadow: 0 2rpx 8rpx rgba(82, 196, 26, 0.2);
-		}
+	/* 试题按钮样式 */
+	.question-button {
+		padding: 12rpx 24rpx;
+		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		color: #fff;
+		border: none;
+		border-radius: 20rpx;
+		font-size: 24rpx;
+		font-weight: 600;
+		transition: all 0.3s ease;
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
+	}
 
-		.detail-button:hover {
-			transform: translateY(-2rpx);
-			box-shadow: 0 4rpx 12rpx rgba(82, 196, 26, 0.3);
-		}
+	.question-button:hover {
+		transform: translateY(-2rpx);
+		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
+	}
 
-		.detail-button:active {
-			transform: translateY(0);
-			box-shadow: 0 2rpx 8rpx rgba(82, 196, 26, 0.2);
-		}
+	.question-button:active {
+		transform: translateY(0);
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
+	}
 	
 	/* 空状态样式 */
 	.empty-state {

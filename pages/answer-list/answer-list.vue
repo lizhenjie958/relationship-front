@@ -1,13 +1,362 @@
 <template>
-	<view>
-		
+	<view class="answer-list-container">
+		<view class="page-header">
+			<view class="header-left">
+				<button class="back-button" @click="goBack">
+					<text class="back-icon">←</text>
+					<text class="back-text">返回</text>
+				</button>
+			</view>
+			<text class="page-title">答题记录</text>
+			<view class="header-right"></view>
+		</view>
+
+		<!-- Tab切换 -->
+		<view class="tab-container">
+			<view 
+				v-for="tab in tabs" 
+				:key="tab.value" 
+				class="tab-item" 
+				:class="{ active: activeTab === tab.value }"
+				@click="switchTab(tab.value)"
+			>
+				<text class="tab-text">{{ tab.label }}</text>
+			</view>
+		</view>
+
+		<!-- 表格容器 -->
+		<view class="table-container">
+			<!-- 表格头部 -->
+			<view class="table-header">
+				<view class="table-cell sharer-cell">分享人</view>
+				<view class="table-cell protagonist-cell">主角</view>
+				<view class="table-cell answerer-cell">答题人</view>
+				<view class="table-cell answer-time-cell">答题时间</view>
+				<view class="table-cell complete-time-cell">完成/过期时间</view>
+				<view class="table-cell score-cell">得分</view>
+			</view>
+
+			<!-- 表格内容 -->
+			<view class="table-body">
+				<view v-for="item in filteredAnswers" :key="item.id" class="table-row">
+					<view class="table-cell sharer-cell">
+						<text class="sharer">{{ item.sharer }}</text>
+					</view>
+					<view class="table-cell protagonist-cell">
+						<text class="protagonist" @click="goToQuestionList">{{ item.protagonist }}</text>
+					</view>
+					<view class="table-cell answerer-cell">
+						<text class="answerer">{{ item.answerer }}</text>
+					</view>
+					<view class="table-cell answer-time-cell">
+						<text class="answer-time">{{ item.answerTime }}</text>
+					</view>
+					<view class="table-cell complete-time-cell">
+						<text class="complete-time">{{ item.status === 'completed' ? item.completeTime : item.expireTime }}</text>
+					</view>
+					<view class="table-cell score-cell">
+						<text class="score">{{ item.score }}</text>
+					</view>
+				</view>
+			</view>
+
+			<!-- 空状态 -->
+			<view v-if="filteredAnswers.length === 0" class="empty-state">
+				<text class="empty-text">暂无答题记录</text>
+			</view>
+		</view>
 	</view>
 </template>
 
 <script setup>
-	
+import { ref, computed, onMounted } from 'vue';
+
+// Tab配置
+const tabs = [
+	{ label: '进行中', value: 'ongoing' },
+	{ label: '已完成', value: 'completed' },
+	{ label: '已过期', value: 'expired' }
+];
+
+// 当前激活的Tab
+const activeTab = ref('ongoing');
+
+// 模拟答题记录数据
+const answers = ref([
+	{
+		id: 1,
+		status: 'ongoing',
+		sharer: '张三',
+		protagonist: '李四',
+		answerer: '王五',
+		answerTime: '2026-01-26 10:00',
+		expireTime: '2026-01-27 10:00',
+		score: '0'
+	},
+	{
+		id: 2,
+		status: 'completed',
+		sharer: '赵六',
+		protagonist: '钱七',
+		answerer: '孙八',
+		answerTime: '2026-01-25 14:30',
+		completeTime: '2026-01-25 15:00',
+		score: '85'
+	},
+	{
+		id: 3,
+		status: 'expired',
+		sharer: '周九',
+		protagonist: '吴十',
+		answerer: '郑一',
+		answerTime: '2026-01-24 09:00',
+		expireTime: '2026-01-25 09:00',
+		score: '0'
+	},
+	{
+		id: 4,
+		status: 'completed',
+		sharer: '王二',
+		protagonist: '张三',
+		answerer: '李四',
+		answerTime: '2026-01-23 16:00',
+		completeTime: '2026-01-23 16:30',
+		score: '90'
+	}
+]);
+
+// 根据当前Tab过滤数据
+const filteredAnswers = computed(() => {
+	return answers.value.filter(item => item.status === activeTab.value);
+});
+
+// 切换Tab
+const switchTab = (tabValue) => {
+	activeTab.value = tabValue;
+};
+
+// 返回上一页
+const goBack = () => {
+	uni.navigateBack({
+		delta: 1
+	});
+};
+
+// 跳转到试卷列表
+const goToQuestionList = () => {
+	uni.navigateTo({
+		url: '/pages/question-list/question-list'
+	});
+};
+
+onMounted(() => {
+	console.log('Answer list page mounted');
+});
 </script>
 
-<style>
-	       
+<style scoped>
+.answer-list-container {
+	padding: 20rpx;
+	background-color: #f5f7fa;
+	min-height: 100vh;
+}
+
+.page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 30rpx;
+}
+
+.header-left {
+	flex: 1;
+}
+
+.back-button {
+	display: flex;
+	align-items: center;
+	background: none;
+	border: none;
+	padding: 0;
+}
+
+.back-icon {
+	font-size: 32rpx;
+	color: #333;
+	margin-right: 8rpx;
+}
+
+.back-text {
+	font-size: 28rpx;
+	color: #333;
+}
+
+.page-title {
+	font-size: 36rpx;
+	font-weight: 700;
+	color: #333;
+}
+
+.header-right {
+	flex: 1;
+}
+
+/* Tab样式 */
+.tab-container {
+	display: flex;
+	background-color: #fff;
+	border-radius: 12rpx;
+	padding: 8rpx;
+	margin-bottom: 30rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.tab-item {
+	flex: 1;
+	text-align: center;
+	padding: 16rpx;
+	border-radius: 8rpx;
+	transition: all 0.3s ease;
+}
+
+.tab-item.active {
+	background-color: #1890ff;
+}
+
+.tab-text {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #666;
+	transition: all 0.3s ease;
+}
+
+.tab-item.active .tab-text {
+	color: #fff;
+}
+
+/* 表格样式 */
+.table-container {
+	background-color: #fff;
+	border-radius: 16rpx;
+	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+}
+
+.table-header {
+	display: flex;
+	background-color: #f8f9fa;
+	border-bottom: 2rpx solid #e9ecef;
+	padding: 20rpx;
+	font-weight: 600;
+	color: #333;
+	font-size: 24rpx;
+}
+
+.table-row {
+	display: flex;
+	align-items: center;
+	padding: 24rpx 20rpx;
+	border-bottom: 2rpx solid #f0f0f0;
+	transition: background-color 0.3s ease;
+}
+
+.table-row:hover {
+	background-color: #f8f9fa;
+}
+
+.table-cell {
+	display: flex;
+	align-items: center;
+	word-break: break-word;
+}
+
+.sharer-cell {
+	flex: 1.5;
+}
+
+.protagonist-cell {
+	flex: 1;
+}
+
+.answerer-cell {
+	flex: 1;
+}
+
+.answer-time-cell {
+	flex: 1.5;
+}
+
+.complete-time-cell {
+	flex: 1.5;
+}
+
+.score-cell {
+	flex: 1;
+	justify-content: center;
+}
+
+.sharer,
+.answerer,
+.answer-time,
+.complete-time,
+.score {
+	font-size: 24rpx;
+	color: #333;
+}
+
+.protagonist {
+	font-size: 24rpx;
+	color: #1890ff;
+	cursor: pointer;
+	text-decoration: underline;
+	transition: color 0.3s ease;
+}
+
+.protagonist:hover {
+	color: #40a9ff;
+}
+
+/* 空状态样式 */
+.empty-state {
+	padding: 100rpx 0;
+	text-align: center;
+}
+
+.empty-text {
+	font-size: 28rpx;
+	color: #999;
+}
+
+/* 响应式调整 */
+@media (max-width: 750rpx) {
+	.answer-list-container {
+		padding: 16rpx;
+	}
+
+	.page-title {
+		font-size: 32rpx;
+	}
+
+	.tab-text {
+		font-size: 24rpx;
+	}
+
+	.table-header {
+		padding: 16rpx;
+		font-size: 22rpx;
+	}
+
+	.table-row {
+		padding: 20rpx 16rpx;
+	}
+
+	.sharer,
+	.protagonist,
+	.answerer,
+	.answer-time,
+	.complete-time,
+	.score {
+		font-size: 22rpx;
+	}
+}
 </style>

@@ -21,31 +21,31 @@
 		{
 			"path": "pages/user/user",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "用户中心"
 			}
 		},
 		{
 			"path": "pages/question-record/question-record",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "试卷记录"
 			}
 		},
 		{
 			"path": "pages/answer-record/answer-record",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "答题记录"
 			}
 		},
 		{
 			"path": "pages/question-list/question-list",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "试卷列表"
 			}
 		},
 		{
 			"path": "pages/answer-list/answer-list",
 			"style": {
-				"navigationBarTitleText": ""
+				"navigationBarTitleText": "答题列表"
 			}
 		}
 	],
@@ -65,20 +65,20 @@
 			{
 				"text": "答题",
 				"pagePath": "pages/index/index",
-				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/home.png",
-				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/home.png"
+				"iconPath": "/static/images/answer.png",
+				"selectedIconPath": "/static/images/answer-s.png"
 			},
 			{
 				"text": "关系",
 				"pagePath": "pages/relation/relation",
-				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/handshake.png",
-				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/handshake.png"
+				"iconPath": "/static/images/relation.png",
+				"selectedIconPath": "/static/images/relation-s.png"
 			},
 			{
 				"text": "我的",
 				"pagePath": "pages/user/user",
-				"iconPath": "https://img.icons8.com/ios-filled/50/9799a5/user.png",
-				"selectedIconPath": "https://img.icons8.com/ios-filled/50/1890ff/user.png"
+				"iconPath": "/static/images/user.png",
+				"selectedIconPath": "/static/images/user-s.png"
 			}
 		]
 	}
