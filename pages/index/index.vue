@@ -1,57 +1,86 @@
 <template>
 	<view class="container">
-		<!-- 顶部统计卡片 -->
-		<view class="stats-container">
-			<view class="stat-card">
-				<text class="stat-label">答题</text>
-				<text class="stat-value">1次</text>
+		<!-- 今日答题统计 -->
+		<view class="today-stats-container">
+			<view class="today-stats-header">
+				<text class="today-stats-title">今日答题统计</text>
+				<text class="today-date">{{ todayDate }}</text>
 			</view>
-			<view class="stat-card">
-				<text class="stat-label">最高得分</text>
-				<text class="stat-value">80</text>
-			</view>
-			<view class="stat-card">
-				<text class="stat-label">全国排名</text>
-				<text class="stat-value">1000</text>
+			<view class="stats-container">
+				<view class="stat-card">
+					<text class="stat-label">答题</text>
+					<text class="stat-value">1次</text>
+				</view>
+				<view class="stat-card">
+					<text class="stat-label">最高得分</text>
+					<text class="stat-value">80</text>
+				</view>
+				<view class="stat-card">
+					<text class="stat-label">全国排名</text>
+					<text class="stat-value">1000</text>
+				</view>
 			</view>
 		</view>
 
-		<!-- 提示信息 -->
-		<view class="tip-container">
-			<text class="tip-text">连续完成30天答题，可永久解锁会员权益</text>
-		</view>
+		<!-- 连续答题挑战 -->
+		<view class="challenge-container">
+			<!-- 提示信息 -->
+			<view class="tip-container">
+				<text class="tip-text">连续完成30天答题，可永久解锁会员权益</text>
+			</view>
 
-		<!-- 日历组件 -->
-		<view class="calendar-container">
-			<uni-calendar 
-				:selected="selectedDates" 
-				:range="false" 
-				@change="handleCalendarChange"
-				:insert="true"
-				:lunar="false"
-				:start-date="'2021-01-01'"
-				:end-date="'2026-12-31'"
-			></uni-calendar>
-		</view>
-
-		<!-- 广告版位 -->
-		<view class="ad-container">
-			<text class="ad-text">广告版位</text>
+			<!-- 日历组件 -->
+			<view class="calendar-container">
+				<uni-calendar 
+					:insert="true"
+					start-date="2021-01-01"
+					end-date="2026-12-31"
+					:selected="answeredDates"
+				></uni-calendar>
+			</view>
 		</view>
 
 		<!-- 分享记录表格 -->
 		<view class="share-container">
-			<view class="share-header">
-				<text class="share-col">分享人</text>
-				<text class="share-col">分享时间</text>
-				<text class="share-col">过期时间</text>
-				<text class="share-col">操作</text>
+			<!-- 未完成答题提示 -->
+			<view class="unfinished-tip">
+				<view class="tip-icon">!</view>
+				<view class="tip-content">
+					<text class="tip-title">未完成答题</text>
+					<text class="tip-desc">您有1份试卷尚未完成，请及时作答</text>
+				</view>
 			</view>
-			<view class="share-row">
-				<text class="share-col">老王</text>
-				<text class="share-col">2026-01-26 22:18</text>
-				<text class="share-col">2026-01-2622:18</text>
-				<text class="continue-btn" @click="continueAnswer(1)">继续作答</text>
+			
+			<!-- 分享记录 -->
+			<view class="share-content">
+				<view class="share-header">
+					<view class="share-col">
+						<text>分享人</text>
+					</view>
+					<view class="share-col">
+						<text>主角</text>
+					</view>
+					<view class="share-col">
+						<text>过期时间</text>
+					</view>
+					<view class="share-col">
+						<text>操作</text>
+					</view>
+				</view>
+				<view class="share-row">
+					<view class="share-col">
+						<text>老王</text>
+					</view>
+					<view class="share-col">
+						<text>刘星</text>
+					</view>
+					<view class="share-col">
+						<text>2026-01-26 22:18</text>
+					</view>
+					<view class="share-col">
+						<text class="continue-btn" @click="continueAnswer(1)">→</text>
+					</view>
+				</view>
 			</view>
 		</view>
 
@@ -61,18 +90,45 @@
 <script setup>
 	import { ref, onMounted } from 'vue';
 
-	// 日历相关数据
-	const selectedDates = ref(['2021-05-04']);
-	const answeredDays = ref(['2021-05-04', '2021-05-20']); // 已答题的日期
+	// 今日日期
+	const todayDate = ref('');
+	// 已答题日期（正确格式）
+	const answeredDates = ref([]);
 
-	// 处理日历选择变化
-	const handleCalendarChange = (e) => {
-		selectedDates.value = e.detail.value;
+	// 格式化日期
+	const formatDate = (date) => {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	};
+
+	// 生成模拟的已答题日期（正确格式）
+	const generateAnsweredDates = () => {
+		const dates = [];
+		const today = new Date();
+		
+		// 模拟最近7天中有5天答题了
+		for (let i = 0; i < 7; i++) {
+			if (i !== 2 && i !== 4) { // 跳过2天
+				const date = new Date(today);
+				date.setDate(today.getDate() - i);
+				dates.push({
+					date: formatDate(date),
+					info: '已答题'
+				});
+			}
+		}
+		
+		return dates;
 	};
 
 	// 页面加载时初始化
 onMounted(() => {
-	// 可以在这里添加初始化逻辑
+	// 设置今日日期
+	todayDate.value = formatDate(new Date());
+	// 设置已答题日期
+	answeredDates.value = generateAnsweredDates();
 });
 
 // 继续答题
@@ -86,25 +142,92 @@ const continueAnswer = (recordId) => {
 <style scoped>
 	.container {
 		padding: 20rpx;
-		background-color: #f5f5f5;
+		background-color: #f5f7fa;
 		min-height: 100vh;
+	}
+
+	/* 今日答题统计容器 */
+	.today-stats-container {
+		background-color: #ffffff;
+		border-radius: 16rpx;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 装饰元素 */
+	.today-stats-container::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 6rpx;
+		background: linear-gradient(90deg, #1890ff, #69c0ff);
+		border-radius: 16rpx 16rpx 0 0;
+	}
+
+	/* 今日答题统计标题 */
+	.today-stats-header {
+		margin-bottom: 24rpx;
+		padding-bottom: 16rpx;
+		border-bottom: 2rpx solid #f0f0f0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.today-stats-title {
+		font-size: 28rpx;
+		font-weight: bold;
+		color: #333333;
+		display: block;
+		position: relative;
+		padding-left: 16rpx;
+	}
+
+	.today-stats-title::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 6rpx;
+		height: 24rpx;
+		background-color: #1890ff;
+		border-radius: 3rpx;
+	}
+
+	/* 日期显示 */
+	.today-date {
+		font-size: 20rpx;
+		color: #999999;
 	}
 
 	/* 顶部统计卡片 */
 	.stats-container {
 		display: flex;
 		justify-content: space-between;
-		margin-bottom: 20rpx;
+		margin-bottom: 0;
+		gap: 16rpx;
 	}
 
 	.stat-card {
 		flex: 1;
-		background-color: #ffffff;
 		border-radius: 12rpx;
 		padding: 20rpx;
 		margin: 0 10rpx;
 		text-align: center;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+		background-color: #fafafa;
+		border: 2rpx solid #f0f0f0;
+	}
+
+	.stat-card:hover {
+		background-color: #f0f7ff;
+		border-color: #d6e4ff;
+		transition: all 0.3s ease;
 	}
 
 	.stat-label {
@@ -121,9 +244,33 @@ const continueAnswer = (recordId) => {
 		color: #333333;
 	}
 
+	/* 连续答题挑战容器 */
+	.challenge-container {
+		background-color: #ffffff;
+		border-radius: 16rpx;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 装饰元素 */
+	.challenge-container::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 6rpx;
+		background: linear-gradient(90deg, #52c41a, #95de64);
+		border-radius: 16rpx 16rpx 0 0;
+	}
+
 	/* 提示信息 */
 	.tip-container {
-		background-color: #e8f0fe;
+		background-color: #f6ffed;
+		border: 2rpx solid #b7eb8f;
 		border-radius: 8rpx;
 		padding: 16rpx;
 		margin-bottom: 20rpx;
@@ -131,17 +278,18 @@ const continueAnswer = (recordId) => {
 
 	.tip-text {
 		font-size: 24rpx;
-		color: #1890ff;
+		color: #52c41a;
 		text-align: center;
+		font-weight: 500;
 	}
 
 	/* 日历组件 */
 	.calendar-container {
-		background-color: #ffffff;
+		background-color: transparent;
 		border-radius: 12rpx;
-		padding: 20rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+		padding: 0;
+		margin-bottom: 0;
+		box-shadow: none;
 	}
 
 	/* 调整uni-calendar组件的样式 */
@@ -169,23 +317,28 @@ const continueAnswer = (recordId) => {
 	}
 
 	.uni-calendar__cell--selected {
-		background-color: #e6f7ff;
-		color: #1890ff;
+		background-color: #f6ffed;
+		color: #52c41a;
 		border-radius: 50%;
+		position: relative;
 	}
 
-	/* 广告版位 */
-	.ad-container {
-		background-color: #e0e0e0;
-		border-radius: 12rpx;
-		padding: 80rpx 0;
-		margin-bottom: 20rpx;
-		text-align: center;
-	}
-
-	.ad-text {
-		font-size: 28rpx;
-		color: #666666;
+	.uni-calendar__cell--selected::after {
+		content: '✓';
+		position: absolute;
+		bottom: 2rpx;
+		right: 2rpx;
+		font-size: 16rpx;
+		font-weight: bold;
+		color: #52c41a;
+		background-color: #ffffff;
+		border-radius: 50%;
+		width: 24rpx;
+		height: 24rpx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		border: 2rpx solid #52c41a;
 	}
 
 	/* 分享记录表格 */
@@ -195,6 +348,55 @@ const continueAnswer = (recordId) => {
 		padding: 20rpx;
 		margin-bottom: 100rpx;
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	}
+
+	/* 未完成答题提示 */
+	.unfinished-tip {
+		display: flex;
+		align-items: center;
+		background-color: #fff7e6;
+		border: 2rpx solid #ffd591;
+		border-radius: 8rpx;
+		padding: 16rpx;
+		margin-bottom: 20rpx;
+	}
+
+	.tip-icon {
+		width: 32rpx;
+		height: 32rpx;
+		border-radius: 50%;
+		background-color: #fa8c16;
+		color: #ffffff;
+		font-size: 24rpx;
+		font-weight: bold;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-right: 12rpx;
+	}
+
+	.tip-content {
+		flex: 1;
+	}
+
+	.tip-title {
+		font-size: 24rpx;
+		font-weight: bold;
+		color: #d46b08;
+		margin-bottom: 4rpx;
+		display: block;
+	}
+
+	.tip-desc {
+		font-size: 20rpx;
+		color: #fa8c16;
+		display: block;
+	}
+
+	/* 分享记录内容 */
+	.share-content {
+		border-top: 2rpx solid #f0f0f0;
+		padding-top: 20rpx;
 	}
 
 	.share-header {
@@ -209,6 +411,11 @@ const continueAnswer = (recordId) => {
 		font-size: 24rpx;
 		color: #666666;
 		text-align: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		padding: 0 8rpx;
+		box-sizing: border-box;
 	}
 
 	.share-row {
@@ -220,9 +427,16 @@ const continueAnswer = (recordId) => {
 	.continue-btn {
 		background-color: #1890ff;
 		color: #ffffff;
-		padding: 8rpx 16rpx;
-		border-radius: 4rpx;
-		font-size: 22rpx;
+		padding: 12rpx 20rpx;
+		border-radius: 8rpx;
+		font-size: 24rpx;
+		font-weight: bold;
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+	.continue-btn:hover {
+		background-color: #40a9ff;
 	}
 
 	/* 底部导航栏 */

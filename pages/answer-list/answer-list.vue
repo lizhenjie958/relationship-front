@@ -18,47 +18,37 @@
 		<view class="table-container">
 			<!-- 表格头部 -->
 			<view class="table-header">
-				<view class="table-cell sharer-cell">分享人</view>
-				<view class="table-cell protagonist-cell">主角</view>
-				<view class="table-cell answerer-cell">答题人</view>
-				<view class="table-cell answer-time-cell">答题时间</view>
-				<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
-				<view class="table-cell score-cell">得分</view>
-				<view class="table-cell action-cell">操作</view>
-			</view>
+					<view class="table-cell sharer-cell">分享人</view>
+					<view class="table-cell protagonist-cell">主角</view>
+					<view class="table-cell answer-time-cell">答题时间</view>
+					<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
+					<view v-if="activeTab === 'completed'" class="table-cell score-cell">得分</view>
+					<view class="table-cell action-cell">{{ activeTab === 'completed' ? '操作' : '查看' }}</view>
+				</view>
 
-			<!-- 表格内容 -->
-			<view class="table-body">
-				<view v-for="item in filteredAnswers" :key="item.id" class="table-row">
-					<view class="table-cell sharer-cell">
-						<text class="sharer">{{ item.sharer }}</text>
-					</view>
-					<view class="table-cell protagonist-cell">
-						<text class="protagonist" @click="goToQuestionList">{{ item.protagonist }}</text>
-					</view>
-					<view class="table-cell answerer-cell">
-						<text class="answerer">{{ item.answerer }}</text>
-					</view>
-					<view class="table-cell answer-time-cell">
+				<!-- 表格内容 -->
+				<view class="table-body">
+					<view v-for="item in filteredAnswers" :key="item.id" class="table-row">
+						<view class="table-cell sharer-cell">
+							<text class="sharer">{{ item.sharer }}</text>
+						</view>
+						<view class="table-cell protagonist-cell">
+							<text class="protagonist" @click="goToQuestionList">{{ item.protagonist }}</text>
+						</view>
+						<view class="table-cell answer-time-cell">
 						<text class="answer-time">{{ item.answerTime }}</text>
 					</view>
 					<view class="table-cell complete-time-cell">
-							<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
-						</view>
-						<view class="table-cell score-cell">
-							<text class="score">{{ activeTab === 'completed' ? item.score : '-' }}</text>
-						</view>
-						<view class="table-cell action-cell">
-							<button 
-								class="action-button"
-								:class="{ 'primary': item.status === 'ongoing' }"
-								@click="goToAnswerRecord(item.id)"
-							>
-								{{ item.status === 'ongoing' ? '继续答题' : '查看试题' }}
-							</button>
-						</view>
+						<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
+					</view>
+					<view v-if="activeTab === 'completed'" class="table-cell score-cell">
+						<text class="score">{{ item.score }}</text>
+					</view>
+					<view class="table-cell action-cell">
+						<text class="action-arrow" @click="goToAnswerRecord(item.id)">→</text>
+					</view>
+					</view>
 				</view>
-			</view>
 
 			<!-- 空状态 -->
 			<view v-if="filteredAnswers.length === 0" class="empty-state">
@@ -88,7 +78,6 @@ const answers = ref([
 		status: 'ongoing',
 		sharer: '张三',
 		protagonist: '李四',
-		answerer: '王五',
 		answerTime: '2026-01-26 10:00',
 		expireTime: '2026-01-27 10:00',
 		score: '0'
@@ -98,7 +87,6 @@ const answers = ref([
 		status: 'completed',
 		sharer: '赵六',
 		protagonist: '钱七',
-		answerer: '孙八',
 		answerTime: '2026-01-25 14:30',
 		completeTime: '2026-01-25 15:00',
 		score: '85'
@@ -108,7 +96,6 @@ const answers = ref([
 		status: 'expired',
 		sharer: '周九',
 		protagonist: '吴十',
-		answerer: '郑一',
 		answerTime: '2026-01-24 09:00',
 		expireTime: '2026-01-25 09:00',
 		score: '0'
@@ -118,7 +105,6 @@ const answers = ref([
 		status: 'completed',
 		sharer: '王二',
 		protagonist: '张三',
-		answerer: '李四',
 		answerTime: '2026-01-23 16:00',
 		completeTime: '2026-01-23 16:30',
 		score: '90'
@@ -242,10 +228,6 @@ onMounted(() => {
 	flex: 1;
 }
 
-.answerer-cell {
-	flex: 1;
-}
-
 .answer-time-cell {
 	flex: 1.5;
 }
@@ -264,36 +246,20 @@ onMounted(() => {
 		justify-content: center;
 	}
 
-	.action-button {
-		padding: 8rpx 16rpx;
-		border-radius: 8rpx;
-		font-size: 22rpx;
-		font-weight: 600;
+	.action-arrow {
+		cursor: pointer;
+		font-size: 48rpx;
+		color: #1890ff;
+		font-weight: bold;
 		transition: all 0.3s ease;
-		border: 2rpx solid #d9d9d9;
-		background-color: #fff;
-		color: #666;
 	}
 
-	.action-button:hover {
-		transform: translateY(-2rpx);
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-	}
-
-	.action-button.primary {
-		border-color: #1890ff;
-		background-color: #1890ff;
-		color: #fff;
-	}
-
-	.action-button.primary:hover {
-		border-color: #40a9ff;
-		background-color: #40a9ff;
-		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
+	.action-arrow:hover {
+		transform: translateX(4rpx);
+		color: #40a9ff;
 	}
 
 .sharer,
-.answerer,
 .answer-time,
 .complete-time,
 .score {
@@ -349,7 +315,6 @@ onMounted(() => {
 
 	.sharer,
 	.protagonist,
-	.answerer,
 	.answer-time,
 	.complete-time,
 	.score {

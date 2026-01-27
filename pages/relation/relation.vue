@@ -331,23 +331,26 @@ const closeQuestionDialog = () => {
 	
 	/* 试题按钮样式 */
 	.question-button {
-		padding: 12rpx 24rpx;
-		background: #1890ff;
+		padding: 14rpx 28rpx;
+		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
 		color: #fff;
 		border: none;
-		border-radius: 8rpx;
-		font-size: 24rpx;
+		border-radius: 12rpx;
+		font-size: 26rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
+		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.3);
 	}
 
 	.question-button:hover {
-		background: #40a9ff;
+		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
 		transform: translateY(-2rpx);
+		box-shadow: 0 6rpx 16rpx rgba(24, 144, 255, 0.4);
 	}
 
 	.question-button:active {
 		transform: translateY(0);
+		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.3);
 	}
 	
 	/* 空状态样式 */
@@ -624,18 +627,21 @@ const closeQuestionDialog = () => {
 		font-size: 28rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
 	}
-	
+
 	.cancel-button:hover {
 		background-color: #e9ecef;
 		color: #495057;
 		transform: translateY(-2rpx);
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.12);
 	}
-	
+
 	.cancel-button:active {
 		transform: translateY(0);
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
 	}
-	
+
 	.confirm-button {
 		flex: 1;
 		padding: 24rpx;
@@ -647,13 +653,31 @@ const closeQuestionDialog = () => {
 		font-weight: 600;
 		transition: all 0.3s ease;
 		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
+		position: relative;
+		overflow: hidden;
 	}
-	
+
+	.confirm-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+		transition: left 0.6s ease;
+	}
+
+	.confirm-button:hover::before {
+		left: 100%;
+	}
+
 	.confirm-button:hover {
 		transform: translateY(-2rpx);
 		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.4);
+		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
 	}
-	
+
 	.confirm-button:active {
 		transform: translateY(0);
 		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);

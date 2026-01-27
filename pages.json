@@ -39,7 +39,7 @@
 		{
 			"path": "pages/question-record/question-record",
 			"style": {
-				"navigationBarTitleText": "试卷记录"
+				"navigationBarTitleText": "试卷详情"
 			}
 		},
 		{

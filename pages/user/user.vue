@@ -3,12 +3,28 @@
 		
 		<!-- 用户信息卡片 -->
 		<view class="user-card">
-			<view class="user-avatar">
-				<image src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20portrait%20friendly%20smile%20professional%20business%20style&image_size=square" class="avatar-image" />
-			</view>
 			<view class="user-info">
-				<text class="user-name">用户</text>
-				<text class="user-level">普通会员</text>
+				<view class="user-header">
+					<image :src="isMember ? '/static/images/member.png' : '/static/images/member-n.png'" class="member-image" />
+					<template v-if="!isEditing">
+						<view class="user-name-container" @click="startEditing">
+							<text class="user-name">{{ userName }}</text>
+							<uni-icons type="compose" size="24rpx" color="#999" class="edit-icon" />
+						</view>
+					</template>
+					<template v-else>
+						<view class="edit-container">
+							<input 
+								v-model="editedName" 
+								class="edit-input" 
+								@blur="saveUserName"
+								@keyup.enter="saveUserName"
+								@keyup.esc="cancelEditing"
+								autofocus
+							/>
+						</view>
+					</template>
+				</view>
 			</view>
 		</view>
 		
@@ -83,6 +99,14 @@
 
 <script setup>
 	import { ref } from 'vue';
+	
+	// 是否为会员
+	const isMember = ref(false); // 默认非会员
+	
+	// 用户名相关
+	const userName = ref('用户');
+	const isEditing = ref(false);
+	const editedName = ref(userName.value);
 	
 	// 跳转到答题记录
 	const navigateToAnswerList = () => {
@@ -170,6 +194,38 @@
 			}
 		});
 	};
+	
+	// 开始编辑用户名
+	const startEditing = () => {
+		isEditing.value = true;
+		editedName.value = userName.value;
+	};
+	
+	// 保存用户名
+	const saveUserName = () => {
+		if (editedName.value.trim()) {
+			userName.value = editedName.value.trim();
+			isEditing.value = false;
+			// 触发编辑完成事件
+			onUserNameUpdated(userName.value);
+		} else {
+			uni.showToast({
+				title: '用户名不能为空',
+				icon: 'none'
+			});
+		}
+	};
+	
+	// 取消编辑
+	const cancelEditing = () => {
+		isEditing.value = false;
+	};
+	
+	// 用户名更新事件
+	const onUserNameUpdated = (newName) => {
+		console.log('用户名已更新:', newName);
+		// 这里可以添加更新用户名的API调用等逻辑
+	};
 </script>
 
 <style lang="scss" scoped>
@@ -193,33 +249,69 @@
 		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.2);
 	}
 	
-	.user-avatar {
-		margin-right: 28rpx;
-	}
 	
-	.avatar-image {
-		width: 120rpx;
-		height: 120rpx;
-		border-radius: 50%;
-		border: 3rpx solid rgba(24, 144, 255, 0.3);
-	}
 	
 	.user-info {
 		text-align: left;
 		color: #2c3e50;
 	}
 	
+	.user-header {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+	}
+
 	.user-name {
 		font-size: 36rpx;
 		font-weight: 600;
-		margin-bottom: 8rpx;
-		display: block;
+		color: #2c3e50;
 	}
-	
-	.user-level {
-		font-size: 24rpx;
-		opacity: 0.9;
-		display: block;
+
+	.member-image {
+		width: 56rpx;
+		height: 56rpx;
+		object-fit: contain;
+	}
+
+	/* 用户名容器样式 */
+	.user-name-container {
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
+		padding: 8rpx 12rpx;
+		border-radius: 8rpx;
+		transition: background-color 0.3s ease;
+	}
+
+	.user-name-container:active {
+		background-color: rgba(0, 0, 0, 0.05);
+	}
+
+	.edit-icon {
+		margin-left: 4rpx;
+		opacity: 0.7;
+		transition: opacity 0.3s ease;
+	}
+
+	.user-name-container:hover .edit-icon {
+		opacity: 1;
+	}
+
+	/* 编辑功能样式 */
+	.edit-container {
+		flex: 1;
+	}
+
+	.edit-input {
+		width: 100%;
+		padding: 12rpx 16rpx;
+		border: 2rpx solid #1890ff;
+		border-radius: 8rpx;
+		font-size: 32rpx;
+		font-weight: 600;
+		color: #2c3e50;
+		background-color: rgba(255, 255, 255, 0.8);
 	}
 	
 	/* 功能列表 */
