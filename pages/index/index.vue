@@ -23,25 +23,15 @@
 
 		<!-- 日历组件 -->
 		<view class="calendar-container">
-			<view class="calendar-header">
-				<text class="calendar-nav" @click="prevYear">&laquo;</text>
-				<text class="calendar-nav" @click="prevMonth">&lt;</text>
-				<text class="calendar-title">{{ currentYear }} {{ currentMonth }}</text>
-				<text class="calendar-nav" @click="nextMonth">&gt;</text>
-				<text class="calendar-nav" @click="nextYear">&raquo;</text>
-			</view>
-			<view class="calendar-weekdays">
-				<text v-for="day in weekdays" :key="day" class="weekday">{{ day }}</text>
-			</view>
-			<view class="calendar-days">
-				<text 
-					v-for="(day, index) in calendarDays" 
-					:key="index" 
-					:class="['day', { 'current-day': day === currentDate, 'answered-day': answeredDays.includes(day) }]"
-				>
-					{{ day }}
-				</text>
-			</view>
+			<uni-calendar 
+				:selected="selectedDates" 
+				:range="false" 
+				@change="handleCalendarChange"
+				:insert="true"
+				:lunar="false"
+				:start-date="'2021-01-01'"
+				:end-date="'2026-12-31'"
+			></uni-calendar>
 		</view>
 
 		<!-- 广告版位 -->
@@ -59,11 +49,9 @@
 			</view>
 			<view class="share-row">
 				<text class="share-col">老王</text>
-				<text class="share-col">2026-01-26
-22:18</text>
-				<text class="share-col">2026-01-26
-22:18</text>
-				<text class="continue-btn">继续作答</text>
+				<text class="share-col">2026-01-26 22:18</text>
+				<text class="share-col">2026-01-2622:18</text>
+				<text class="continue-btn" @click="continueAnswer(1)">继续作答</text>
 			</view>
 		</view>
 
@@ -74,62 +62,25 @@
 	import { ref, onMounted } from 'vue';
 
 	// 日历相关数据
-	const currentYear = ref(2021);
-	const currentMonth = ref(5);
-	const currentDate = ref(4);
-	const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-	const calendarDays = ref([]);
-	const answeredDays = ref([4, 20]); // 已答题的日期
+	const selectedDates = ref(['2021-05-04']);
+	const answeredDays = ref(['2021-05-04', '2021-05-20']); // 已答题的日期
 
-	// 生成日历数据
-	const generateCalendar = () => {
-		const days = [];
-		// 模拟生成日历数据，实际项目中需要根据月份计算
-		// 这里直接使用设计图中的数据
-		days.push(25, 26, 27, 28, 29, 30, 1);
-		days.push(2, 3, 4, 5, 6, 7, 8);
-		days.push(9, 10, 11, 12, 13, 14, 15);
-		days.push(16, 17, 18, 19, 20, 21, 22);
-		days.push(23, 24, 25, 26, 27, 28, 29);
-		days.push(30, 31, 1, 2, 3, 4, 5);
-		calendarDays.value = days;
+	// 处理日历选择变化
+	const handleCalendarChange = (e) => {
+		selectedDates.value = e.detail.value;
 	};
 
-	// 日历导航方法
-	const prevYear = () => {
-		currentYear.value--;
-		generateCalendar();
-	};
+	// 页面加载时初始化
+onMounted(() => {
+	// 可以在这里添加初始化逻辑
+});
 
-	const nextYear = () => {
-		currentYear.value++;
-		generateCalendar();
-	};
-
-	const prevMonth = () => {
-		if (currentMonth.value === 1) {
-			currentMonth.value = 12;
-			currentYear.value--;
-		} else {
-			currentMonth.value--;
-		}
-		generateCalendar();
-	};
-
-	const nextMonth = () => {
-		if (currentMonth.value === 12) {
-			currentMonth.value = 1;
-			currentYear.value++;
-		} else {
-			currentMonth.value++;
-		}
-		generateCalendar();
-	};
-
-	// 页面加载时生成日历
-	onMounted(() => {
-		generateCalendar();
+// 继续答题
+const continueAnswer = (recordId) => {
+	uni.navigateTo({
+		url: `/pages/answer-record/answer-record?id=${recordId}`
 	});
+};
 </script>
 
 <style scoped>
@@ -193,68 +144,34 @@
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
 	}
 
-	.calendar-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 20rpx;
+	/* 调整uni-calendar组件的样式 */
+	.uni-calendar {
+		--calendar-border-color: transparent;
 	}
 
-	.calendar-nav {
-		font-size: 28rpx;
-		color: #666666;
-		padding: 0 10rpx;
+	.uni-calendar__header {
+		padding-bottom: 16rpx;
 	}
 
-	.calendar-title {
-		font-size: 28rpx;
-		font-weight: bold;
-		color: #333333;
+	.uni-calendar__body {
+		padding-top: 0;
 	}
 
-	.calendar-weekdays {
-		display: flex;
-		justify-content: space-between;
-		margin-bottom: 16rpx;
-	}
-
-	.weekday {
-		flex: 1;
-		font-size: 24rpx;
-		color: #666666;
-		text-align: center;
-	}
-
-	.calendar-days {
-		display: flex;
-		flex-wrap: wrap;
-	}
-
-	.day {
-		width: 14.28%;
+	.uni-calendar__cell {
 		height: 60rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 24rpx;
-		color: #333333;
-		margin-bottom: 10rpx;
+		line-height: 60rpx;
 	}
 
-	.current-day {
+	.uni-calendar__cell--current {
 		background-color: #1890ff;
 		color: #ffffff;
 		border-radius: 50%;
-		width: 50rpx;
-		height: 50rpx;
 	}
 
-	.answered-day {
+	.uni-calendar__cell--selected {
 		background-color: #e6f7ff;
 		color: #1890ff;
 		border-radius: 50%;
-		width: 50rpx;
-		height: 50rpx;
 	}
 
 	/* 广告版位 */

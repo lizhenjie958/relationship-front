@@ -1,20 +1,20 @@
 <template>
 	<view class="question-list-container">
-		<view class="page-header">
-			<text class="page-title">试卷列表</text>
-		</view>
-
+		
 		<view class="table-container">
 			<!-- 表格头部 -->
 			<view class="table-header">
+				<view class="table-cell record-cell">试卷ID</view>
 				<view class="table-cell name-cell">主角</view> 
 				<view class="table-cell avatar-cell">头像</view>
-				<view class="table-cell record-cell">答题次数</view>
 			</view>
 
 			<!-- 表格内容 -->
 			<view class="table-body">
 				<view v-for="item in questions" :key="item.id" class="table-row">
+					<view class="table-cell record-cell">
+						<text class="paper-id" @click="goToRecord(item.id)">{{ item.id }}</text>
+					</view>
 					<view class="table-cell name-cell">
 						<text class="name">{{ item.name }}</text>
 					</view>
@@ -22,9 +22,6 @@
 						<view class="avatar">
 							<image :src="item.avatar" class="avatar-image" />
 						</view>
-					</view>
-					<view class="table-cell record-cell">
-						<text class="record-count" @click="goToRecord(item.id)">{{ item.answerCount }}</text>
 					</view>
 				</view>
 			</view>
@@ -68,15 +65,7 @@ onMounted(() => {
 	min-height: 100vh;
 }
 
-.page-header {
-	margin-bottom: 30rpx;
-}
 
-.page-title {
-	font-size: 36rpx;
-	font-weight: 700;
-	color: #333;
-}
 
 .table-container {
 	background-color: #fff;
@@ -145,17 +134,17 @@ onMounted(() => {
 	object-fit: cover;
 }
 
-.record-count {
-	font-size: 28rpx;
-	color: #1890ff;
-	cursor: pointer;
-	text-decoration: underline;
-	transition: color 0.3s ease;
-}
+.paper-id {
+		font-size: 28rpx;
+		color: #1890ff;
+		cursor: pointer;
+		text-decoration: underline;
+		transition: color 0.3s ease;
+	}
 
-.record-count:hover {
-	color: #40a9ff;
-}
+	.paper-id:hover {
+		color: #40a9ff;
+	}
 
 .empty-state {
 	padding: 100rpx 0;
@@ -178,9 +167,7 @@ onMounted(() => {
 		padding: 16rpx;
 	}
 
-	.page-title {
-		font-size: 32rpx;
-	}
+
 
 	.name,
 	.record-count {

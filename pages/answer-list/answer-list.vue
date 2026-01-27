@@ -1,16 +1,6 @@
 <template>
 	<view class="answer-list-container">
-		<view class="page-header">
-			<view class="header-left">
-				<button class="back-button" @click="goBack">
-					<text class="back-icon">←</text>
-					<text class="back-text">返回</text>
-				</button>
-			</view>
-			<text class="page-title">答题记录</text>
-			<view class="header-right"></view>
-		</view>
-
+		
 		<!-- Tab切换 -->
 		<view class="tab-container">
 			<view 
@@ -32,8 +22,9 @@
 				<view class="table-cell protagonist-cell">主角</view>
 				<view class="table-cell answerer-cell">答题人</view>
 				<view class="table-cell answer-time-cell">答题时间</view>
-				<view class="table-cell complete-time-cell">完成/过期时间</view>
+				<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
 				<view class="table-cell score-cell">得分</view>
+				<view class="table-cell action-cell">操作</view>
 			</view>
 
 			<!-- 表格内容 -->
@@ -52,11 +43,20 @@
 						<text class="answer-time">{{ item.answerTime }}</text>
 					</view>
 					<view class="table-cell complete-time-cell">
-						<text class="complete-time">{{ item.status === 'completed' ? item.completeTime : item.expireTime }}</text>
-					</view>
-					<view class="table-cell score-cell">
-						<text class="score">{{ item.score }}</text>
-					</view>
+							<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
+						</view>
+						<view class="table-cell score-cell">
+							<text class="score">{{ activeTab === 'completed' ? item.score : '-' }}</text>
+						</view>
+						<view class="table-cell action-cell">
+							<button 
+								class="action-button"
+								:class="{ 'primary': item.status === 'ongoing' }"
+								@click="goToAnswerRecord(item.id)"
+							>
+								{{ item.status === 'ongoing' ? '继续答题' : '查看试题' }}
+							</button>
+						</view>
 				</view>
 			</view>
 
@@ -135,17 +135,19 @@ const switchTab = (tabValue) => {
 	activeTab.value = tabValue;
 };
 
-// 返回上一页
-const goBack = () => {
-	uni.navigateBack({
-		delta: 1
-	});
-};
+
 
 // 跳转到试卷列表
 const goToQuestionList = () => {
 	uni.navigateTo({
 		url: '/pages/question-list/question-list'
+	});
+};
+
+// 跳转到答题记录详情
+const goToAnswerRecord = (recordId) => {
+	uni.navigateTo({
+		url: `/pages/answer-record/answer-record?id=${recordId}`
 	});
 };
 
@@ -161,45 +163,7 @@ onMounted(() => {
 	min-height: 100vh;
 }
 
-.page-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 30rpx;
-}
 
-.header-left {
-	flex: 1;
-}
-
-.back-button {
-	display: flex;
-	align-items: center;
-	background: none;
-	border: none;
-	padding: 0;
-}
-
-.back-icon {
-	font-size: 32rpx;
-	color: #333;
-	margin-right: 8rpx;
-}
-
-.back-text {
-	font-size: 28rpx;
-	color: #333;
-}
-
-.page-title {
-	font-size: 36rpx;
-	font-weight: 700;
-	color: #333;
-}
-
-.header-right {
-	flex: 1;
-}
 
 /* Tab样式 */
 .tab-container {
@@ -291,9 +255,42 @@ onMounted(() => {
 }
 
 .score-cell {
-	flex: 1;
-	justify-content: center;
-}
+		flex: 1;
+		justify-content: center;
+	}
+
+	.action-cell {
+		flex: 1;
+		justify-content: center;
+	}
+
+	.action-button {
+		padding: 8rpx 16rpx;
+		border-radius: 8rpx;
+		font-size: 22rpx;
+		font-weight: 600;
+		transition: all 0.3s ease;
+		border: 2rpx solid #d9d9d9;
+		background-color: #fff;
+		color: #666;
+	}
+
+	.action-button:hover {
+		transform: translateY(-2rpx);
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.action-button.primary {
+		border-color: #1890ff;
+		background-color: #1890ff;
+		color: #fff;
+	}
+
+	.action-button.primary:hover {
+		border-color: #40a9ff;
+		background-color: #40a9ff;
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
+	}
 
 .sharer,
 .answerer,

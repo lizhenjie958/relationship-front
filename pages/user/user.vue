@@ -1,9 +1,5 @@
 <template>
 	<view class="user-container">
-		<!-- 页面头部 -->
-		<view class="page-header">
-			<text class="page-title">个人中心</text>
-		</view>
 		
 		<!-- 用户信息卡片 -->
 		<view class="user-card">
@@ -183,47 +179,34 @@
 		min-height: 100vh;
 	}
 	
-	/* 页面头部 */
-	.page-header {
-		padding: 32rpx 0;
-		text-align: center;
-		border-bottom: 2rpx solid #f1f3f5;
-		margin-bottom: 32rpx;
-	}
 	
-	.page-title {
-		font-size: 40rpx;
-		font-weight: 700;
-		color: #2c3e50;
-		letter-spacing: 2rpx;
-	}
 	
 	/* 用户信息卡片 */
 	.user-card {
-		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
 		border-radius: 24rpx;
-		padding: 48rpx;
+		padding: 36rpx;
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
 		margin-bottom: 32rpx;
-		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.3);
+		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.2);
 	}
 	
 	.user-avatar {
-		margin-right: 32rpx;
+		margin-right: 28rpx;
 	}
 	
 	.avatar-image {
-		width: 160rpx;
-		height: 160rpx;
+		width: 120rpx;
+		height: 120rpx;
 		border-radius: 50%;
-		border: 4rpx solid rgba(255, 255, 255, 0.8);
+		border: 3rpx solid rgba(24, 144, 255, 0.3);
 	}
 	
 	.user-info {
-		text-align: center;
-		color: #fff;
+		text-align: left;
+		color: #2c3e50;
 	}
 	
 	.user-name {
@@ -323,10 +306,10 @@
 	}
 	
 	.share-card {
-		background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
+		background: linear-gradient(135deg, #f0f5ff 0%, #f9f0ff 100%);
 		border-radius: 24rpx;
 		padding: 40rpx;
-		box-shadow: 0 8rpx 24rpx rgba(114, 46, 209, 0.3);
+		box-shadow: 0 4rpx 16rpx rgba(114, 46, 209, 0.2);
 	}
 	
 	.share-header {
@@ -339,15 +322,15 @@
 	.share-title {
 		font-size: 36rpx;
 		font-weight: 700;
-		color: #fff;
+		color: #722ed1;
 	}
 	
 	.share-badge {
 		padding: 8rpx 16rpx;
-		background-color: rgba(255, 255, 255, 0.2);
+		background-color: rgba(114, 46, 209, 0.1);
 		border-radius: 16rpx;
 		font-size: 20rpx;
-		color: #fff;
+		color: #722ed1;
 	}
 	
 	.share-content {
@@ -356,7 +339,7 @@
 	
 	.share-desc {
 		font-size: 24rpx;
-		color: rgba(255, 255, 255, 0.9);
+		color: #666;
 		margin-bottom: 8rpx;
 		display: block;
 	}
@@ -364,27 +347,26 @@
 	.share-reward {
 		font-size: 32rpx;
 		font-weight: 600;
-		color: #fff;
+		color: #722ed1;
 		display: block;
 	}
 	
 	.share-button {
 		width: 100%;
 		padding: 24rpx;
-		background-color: rgba(255, 255, 255, 0.95);
-		color: #722ed1;
+		background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
+		color: #fff;
 		border: none;
 		border-radius: 16rpx;
 		font-size: 28rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
-		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4rpx 16rpx rgba(114, 46, 209, 0.3);
 	}
 	
 	.share-button:hover {
-		background-color: #fff;
 		transform: translateY(-2rpx);
-		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
+		box-shadow: 0 8rpx 24rpx rgba(114, 46, 209, 0.4);
 	}
 	
 	.share-button:active {

@@ -1,50 +1,35 @@
 <template>
 	<view class="relation">
-		<!-- 新增按钮 -->
-		<view class="page-header">
-			<text class="page-title">关系管理</text>
-			<button class="add-button" @click="navigateToAddRelation">
-			<text class="button-icon">+</text>
-			<text class="button-text">新增关系</text>
-		</button>
-		</view>
 		<view class="relationTable">
 			<view v-if="loading" class="loading">
+				<view class="loading-spinner"></view>
 				<text class="loading-text">加载中...</text>
 			</view>
 			<view v-else>
-				<!-- 表头 -->
-				<view class="table-header">
-					<view class="table-cell name-cell">主角</view>
-					<view class="table-cell avatar-cell">头像</view>
-					<view class="table-cell remark-cell">备注</view>
-					<view class="table-cell detail-cell">详情</view>
-				</view>
-				
 				<!-- 数据列表 -->
 				<view v-if="protagonData.protagonList.length > 0" class="table-body">
 					<view v-for="item in protagonData.protagonList" :key="item.id" class="table-row" @click="navigateToRelationManager(item.id)">
-						<view class="table-cell name-cell">
-							<view class="name">{{ item.name }}</view>
-						</view>
 						<view class="table-cell avatar-cell">
 							<image v-if="item.smallPicUrl" :src="item.smallPicUrl" class="image" />
 							<view v-else class="no-avatar">
-								<text>无头像</text>
+								<text class="avatar-icon">👤</text>
 							</view>
 						</view>
-						<view class="table-cell remark-cell">
+						<view class="table-cell info-cell">
+							<view class="name">{{ item.name }}</view>
 							<view class="remark">{{ item.remark || '' }}</view>
 						</view>
 						<view class="table-cell detail-cell">
-							<button class="question-button" @click.stop="generateQuestion(item.id)">试题</button>
+							<button class="question-button" @click.stop="generateQuestion(item.id)">生成试题</button>
 						</view>
 					</view>
 				</view>
 				
 				<!-- 空状态 -->
 				<view v-else class="empty-state">
-					<text>暂无更多数据</text>
+					<view class="empty-icon">📭</view>
+					<text class="empty-text">暂无数据</text>
+					<text class="empty-hint">点击"新增关系"按钮添加第一个关系</text>
 				</view>
 			</view>
 		</view>
@@ -52,6 +37,7 @@
 		<!-- 生成试题弹窗 -->
 		<view v-if="generatingQuestion" class="dialog-overlay">
 			<view class="loading-container">
+				<view class="loading-spinner-large"></view>
 				<text class="loading-text">生成试题中...</text>
 			</view>
 		</view>
@@ -60,6 +46,7 @@
 		<view v-if="showQuestionDialog" class="dialog-overlay">
 			<view class="popup-container">
 				<view class="popup-header">
+					<view class="success-icon">✓</view>
 					<text class="popup-title">生成成功</text>
 				</view>
 				<view class="popup-content">
@@ -71,6 +58,9 @@
 				</view>
 			</view>
 		</view>
+		
+		<!-- 浮动新增按钮 -->
+		<FloatingButton @click="navigateToAddRelation" />
 	</view>
 </template>
 
@@ -78,6 +68,7 @@
 	import { ref, onMounted } from 'vue';
 	import { onReachBottom, onShow } from '@dcloudio/uni-app';
 	import { queryProtagonistPage } from "@/api/relationApi.js";
+	import FloatingButton from "@/components/FloatingButton.vue";
 	
 	// 数据状态
 	const protagonData = ref({
@@ -210,151 +201,88 @@ const closeQuestionDialog = () => {
 		min-height: 100vh;
 	}
 
-	/* 页面头部样式 */
-	.page-header {
-		display: flex;
-		justify-content: flex-end;
-		align-items: center;
-		margin-bottom: 32rpx;
-		padding: 24rpx 0;
-		border-bottom: 2rpx solid #f1f3f5;
-	}
-	
-	.page-title {
-		font-size: 40rpx;
-		font-weight: 700;
-		color: #2c3e50;
-		letter-spacing: 2rpx;
-	}
-	
-	/* 新增按钮样式 */
-	.add-button {
-		display: flex;
-		align-items: center;
-		gap: 8rpx;
-		padding: 16rpx 32rpx;
-		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
-		color: #fff;
-		border: none;
-		border-radius: 28rpx;
-		font-size: 26rpx;
-		font-weight: 600;
-		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		overflow: hidden;
-		position: relative;
-	}
-	
-	.add-button::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-		transition: left 0.5s ease;
-	}
-	
-	.add-button:hover::before {
-		left: 100%;
-	}
-	
-	.add-button:hover {
-		transform: translateY(-4rpx);
-		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.4);
-	}
-	
-	.add-button:active {
-		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
-	}
-	
-	.button-icon {
-		font-size: 32rpx;
-		font-weight: 300;
-		line-height: 1;
-	}
-	
-	.button-text {
-		line-height: 1;
-	}
-	
 	.relationTable {
-		background-color: #fff;
-		border-radius: 12rpx;
-		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 		overflow: hidden;
-		transition: all 0.3s ease;
-	}
-	
-	.relationTable:hover {
-		box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.12);
 	}
 	
 	/* 加载状态 */
 	.loading {
-		padding: 60rpx 0;
+		padding: 100rpx 0;
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		gap: 24rpx;
+	}
+	
+	.loading-spinner {
+		width: 60rpx;
+		height: 60rpx;
+		border: 4rpx solid #e9ecef;
+		border-top-color: #1890ff;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+	
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 	
 	.loading-text {
 		font-size: 28rpx;
 		color: #909399;
+		font-weight: 500;
 	}
 	
 	/* 表格容器 */
-	.table-header {
-		display: flex;
-		background-color: #f8f9fa;
-		border-bottom: 2rpx solid #e9ecef;
-		font-weight: 600;
-		color: #333;
-		font-size: 28rpx;
-	}
-	
 	.table-body {
 		
 	}
 	
 	.table-row {
 		display: flex;
-		border-bottom: 1rpx solid #f1f3f5;
-		transition: background-color 0.2s ease;
+		align-items: center;
+		background-color: #fff;
+		border-radius: 8rpx;
+		margin-bottom: 20rpx;
+		padding: 24rpx;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+		transition: all 0.2s ease;
 	}
 	
 	.table-row:hover {
 		background-color: #f8f9fa;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
 	}
 	
 	/* 表格单元格 */
 	.table-cell {
-		padding: 20rpx;
+		padding: 0 20rpx;
 		display: flex;
-		justify-content: center;
 		align-items: center;
 	}
 	
-	.name-cell {
-		width: 120rpx;
-		white-space: nowrap;
-	}
-	
 	.avatar-cell {
-		width: 100rpx;
+		width: 80rpx;
 		white-space: nowrap;
+		padding-left: 0;
 	}
 	
-	.remark-cell {
+	.info-cell {
 		flex: 1;
 		min-width: 200rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: center;
+		gap: 8rpx;
 	}
 	
 	.detail-cell {
-		width: 120rpx;
 		white-space: nowrap;
+		padding-right: 0;
 	}
 	
 	/* 名称样式 */
@@ -371,11 +299,6 @@ const closeQuestionDialog = () => {
 		border-radius: 50%;
 		object-fit: cover;
 		border: 2rpx solid #e9ecef;
-		transition: transform 0.2s ease;
-	}
-	
-	.image:hover {
-		transform: scale(1.05);
 	}
 	
 	/* 无头像样式 */
@@ -383,24 +306,19 @@ const closeQuestionDialog = () => {
 		width: 80rpx;
 		height: 80rpx;
 		border-radius: 50%;
-		background-color: #f8f9fa;
-		border: 2rpx dashed #dee2e6;
+		background-color: #f0f2f5;
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		font-size: 24rpx;
-		color: #adb5bd;
-		transition: all 0.2s ease;
 	}
 	
-	.no-avatar:hover {
-		background-color: #e9ecef;
-		transform: scale(1.05);
+	.avatar-icon {
+		font-size: 40rpx;
 	}
 	
 	/* 备注样式 */
 	.remark {
-		font-size: 28rpx;
+		font-size: 24rpx;
 		color: #666;
 		line-height: 1.4;
 		overflow: hidden;
@@ -414,43 +332,81 @@ const closeQuestionDialog = () => {
 	/* 试题按钮样式 */
 	.question-button {
 		padding: 12rpx 24rpx;
-		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		background: #1890ff;
 		color: #fff;
 		border: none;
-		border-radius: 20rpx;
+		border-radius: 8rpx;
 		font-size: 24rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
-		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
 	}
 
 	.question-button:hover {
+		background: #40a9ff;
 		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.4);
 	}
 
 	.question-button:active {
 		transform: translateY(0);
-		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.3);
 	}
 	
 	/* 空状态样式 */
 	.empty-state {
-		padding: 100rpx 0;
+		padding: 120rpx 40rpx;
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		font-size: 30rpx;
+		gap: 24rpx;
+	}
+	
+	.empty-icon {
+		font-size: 120rpx;
+		opacity: 0.6;
+		animation: float 3s ease-in-out infinite;
+	}
+	
+	@keyframes float {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10rpx);
+		}
+	}
+	
+	.empty-text {
+		font-size: 32rpx;
 		color: #909399;
+		font-weight: 600;
+	}
+	
+	.empty-hint {
+		font-size: 26rpx;
+		color: #c0c4cc;
+		font-weight: 400;
 	}
 
 	/* 加载容器 */
 	.loading-container {
 		background-color: #fff;
 		border-radius: 16rpx;
-		padding: 40rpx;
+		padding: 60rpx 40rpx;
 		text-align: center;
-		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+		box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 32rpx;
+	}
+	
+	.loading-spinner-large {
+		width: 80rpx;
+		height: 80rpx;
+		border: 6rpx solid #e9ecef;
+		border-top-color: #1890ff;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
 	}
 
 	/* 弹窗消息 */
@@ -503,6 +459,36 @@ const closeQuestionDialog = () => {
 		text-align: center;
 		margin-bottom: 40rpx;
 		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 24rpx;
+	}
+	
+	.success-icon {
+		width: 100rpx;
+		height: 100rpx;
+		background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+		border-radius: 50%;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		color: #fff;
+		font-size: 56rpx;
+		font-weight: 700;
+		box-shadow: 0 8rpx 24rpx rgba(82, 196, 26, 0.3);
+		animation: successPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	}
+	
+	@keyframes successPop {
+		0% {
+			transform: scale(0);
+			opacity: 0;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 	
 	.popup-title {

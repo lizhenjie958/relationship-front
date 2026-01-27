@@ -25,12 +25,6 @@
 			}
 		},
 		{
-			"path": "pages/question-record/question-record",
-			"style": {
-				"navigationBarTitleText": "试卷记录"
-			}
-		},
-		{
 			"path": "pages/answer-record/answer-record",
 			"style": {
 				"navigationBarTitleText": "答题记录"
@@ -40,6 +34,12 @@
 			"path": "pages/question-list/question-list",
 			"style": {
 				"navigationBarTitleText": "试卷列表"
+			}
+		},
+		{
+			"path": "pages/question-record/question-record",
+			"style": {
+				"navigationBarTitleText": "试卷记录"
 			}
 		},
 		{
