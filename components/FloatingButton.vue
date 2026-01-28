@@ -109,31 +109,31 @@
 		right: 40rpx;
 		display: flex;
 		align-items: center;
-		gap: 12rpx;
-		padding: 20rpx 36rpx;
+		gap: 8rpx;
+		padding: 14rpx 24rpx;
 		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
 		color: #fff;
 		border: none;
-		border-radius: 40rpx;
-		font-size: 28rpx;
-		font-weight: 600;
-		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.3);
+		border-radius: 28rpx;
+		font-size: 24rpx;
+		font-weight: 500;
+		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.25);
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		z-index: 1000;
 		backdrop-filter: blur(8rpx);
 	}
 
 	.floating-add-button:hover {
-		transform: translateY(-4rpx) scale(1.05);
-		box-shadow: 0 12rpx 32rpx rgba(24, 144, 255, 0.4);
+		transform: translateY(-2rpx) scale(1.02);
+		box-shadow: 0 6rpx 20rpx rgba(24, 144, 255, 0.35);
 	}
 
 	.floating-add-button:active {
-		transform: translateY(-2rpx) scale(0.98);
+		transform: translateY(-1rpx) scale(0.98);
 	}
 
 	.floating-button-icon {
-		font-size: 36rpx;
+		font-size: 28rpx;
 		font-weight: 300;
 		line-height: 1;
 	}

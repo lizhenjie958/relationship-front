@@ -18,7 +18,7 @@
 		<view class="table-container">
 			<!-- 表格头部 -->
 			<view class="table-header">
-					<view class="table-cell sharer-cell">分享人</view>
+					<view class="table-cell creator-cell">出题人</view>
 					<view class="table-cell protagonist-cell">主角</view>
 					<view class="table-cell answer-time-cell">答题时间</view>
 					<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
@@ -29,8 +29,8 @@
 				<!-- 表格内容 -->
 				<view class="table-body">
 					<view v-for="item in filteredAnswers" :key="item.id" class="table-row">
-						<view class="table-cell sharer-cell">
-							<text class="sharer">{{ item.sharer }}</text>
+						<view class="table-cell creator-cell">
+							<text class="creator">{{ item.creator }}</text>
 						</view>
 						<view class="table-cell protagonist-cell">
 							<text class="protagonist" @click="goToQuestionList">{{ item.protagonist }}</text>
@@ -76,7 +76,7 @@ const answers = ref([
 	{
 		id: 1,
 		status: 'ongoing',
-		sharer: '张三',
+		creator: '张三',
 		protagonist: '李四',
 		answerTime: '2026-01-26 10:00',
 		expireTime: '2026-01-27 10:00',
@@ -85,7 +85,7 @@ const answers = ref([
 	{
 		id: 2,
 		status: 'completed',
-		sharer: '赵六',
+		creator: '赵六',
 		protagonist: '钱七',
 		answerTime: '2026-01-25 14:30',
 		completeTime: '2026-01-25 15:00',
@@ -94,7 +94,7 @@ const answers = ref([
 	{
 		id: 3,
 		status: 'expired',
-		sharer: '周九',
+		creator: '周九',
 		protagonist: '吴十',
 		answerTime: '2026-01-24 09:00',
 		expireTime: '2026-01-25 09:00',
@@ -103,7 +103,7 @@ const answers = ref([
 	{
 		id: 4,
 		status: 'completed',
-		sharer: '王二',
+		creator: '王二',
 		protagonist: '张三',
 		answerTime: '2026-01-23 16:00',
 		completeTime: '2026-01-23 16:30',
@@ -220,7 +220,7 @@ onMounted(() => {
 	word-break: break-word;
 }
 
-.sharer-cell {
+.creator-cell {
 	flex: 1.5;
 }
 
@@ -259,7 +259,7 @@ onMounted(() => {
 		color: #40a9ff;
 	}
 
-.sharer,
+.creator,
 .answer-time,
 .complete-time,
 .score {
@@ -313,7 +313,7 @@ onMounted(() => {
 		padding: 20rpx 16rpx;
 	}
 
-	.sharer,
+	.creator,
 	.protagonist,
 	.answer-time,
 	.complete-time,

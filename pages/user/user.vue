@@ -81,7 +81,7 @@
 					<text class="share-badge">限时活动</text>
 				</view>
 				<view class="share-content">
-					<text class="share-desc">分享给好友，双方均可获得</text>
+					<text class="share-desc">分享给26位好友注册，即可获得永久会员</text>
 					<text class="share-reward">永久会员权益</text>
 				</view>
 				<button class="share-button" @click="shareApp">
@@ -104,7 +104,7 @@
 	const isMember = ref(false); // 默认非会员
 	
 	// 用户名相关
-	const userName = ref('用户');
+	const userName = ref('微信用户');
 	const isEditing = ref(false);
 	const editedName = ref(userName.value);
 	

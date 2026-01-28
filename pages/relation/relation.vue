@@ -20,7 +20,7 @@
 							<view class="remark">{{ item.remark || '' }}</view>
 						</view>
 						<view class="table-cell detail-cell">
-							<button class="question-button" @click.stop="generateQuestion(item.id)">生成试题</button>
+							<button class="question-button" @click.stop="generateQuestion(item.id)">出题</button>
 						</view>
 					</view>
 				</view>
@@ -30,6 +30,31 @@
 					<view class="empty-icon">📭</view>
 					<text class="empty-text">暂无数据</text>
 					<text class="empty-hint">点击"新增关系"按钮添加第一个关系</text>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 试卷名称输入弹窗 -->
+		<view v-if="showPaperNameDialog" class="dialog-overlay">
+			<view class="popup-container">
+				<view class="popup-header">
+					<text class="popup-title">生成试题</text>
+				</view>
+				<view class="popup-content">
+					<view class="form-item">
+						<text class="form-label">试卷名称</text>
+						<input 
+							v-model="paperName" 
+							class="form-input" 
+							placeholder="请输入试卷名称（最多10个字）" 
+							maxlength="10"
+						/>
+						<text class="char-count">{{ paperName.length }}/10</text>
+					</view>
+				</view>
+				<view class="popup-footer">
+					<button class="cancel-button-small" @click="closePaperNameDialog">取消</button>
+					<button class="confirm-button-small" @click="confirmPaperName">确定</button>
 				</view>
 			</view>
 		</view>
@@ -53,8 +78,8 @@
 					<text class="popup-message">试题生成完成，是否跳转到试题详情页？</text>
 				</view>
 				<view class="popup-footer">
-					<button class="cancel-button" @click="closeQuestionDialog">否</button>
-					<button class="confirm-button" @click="navigateToQuestionRecord">是</button>
+					<button class="cancel-button-small" @click="closeQuestionDialog">否</button>
+					<button class="confirm-button-small" @click="navigateToQuestionRecord">是</button>
 				</view>
 			</view>
 		</view>
@@ -81,6 +106,9 @@
 	// 生成试题状态
 const showQuestionDialog = ref(false);
 const generatingQuestion = ref(false);
+const showPaperNameDialog = ref(false);
+const paperName = ref('');
+const currentRelationId = ref(null);
 	
 	// 跳转到关系管理页面
 const navigateToRelationManager = (id) => {
@@ -110,13 +138,8 @@ const navigateToAddRelation = () => {
 
 // 生成试题
 const generateQuestion = (id) => {
-	generatingQuestion.value = true;
-	
-	// 模拟生成试题的过程
-	setTimeout(() => {
-		generatingQuestion.value = false;
-		showQuestionDialog.value = true;
-	}, 1500);
+	currentRelationId.value = id;
+	showPaperNameDialog.value = true;
 };
 
 // 跳转到试题详情页
@@ -136,6 +159,33 @@ const navigateToQuestionRecord = () => {
 // 关闭弹窗
 const closeQuestionDialog = () => {
 	showQuestionDialog.value = false;
+};
+
+// 关闭试卷名称输入弹窗
+const closePaperNameDialog = () => {
+	showPaperNameDialog.value = false;
+	paperName.value = '';
+	currentRelationId.value = null;
+};
+
+// 确认试卷名称
+const confirmPaperName = () => {
+	if (!paperName.value.trim()) {
+		uni.showToast({
+			title: '请输入试卷名称',
+			icon: 'none'
+		});
+		return;
+	}
+	
+	showPaperNameDialog.value = false;
+	generatingQuestion.value = true;
+	
+	// 模拟生成试题的过程
+	setTimeout(() => {
+		generatingQuestion.value = false;
+		showQuestionDialog.value = true;
+	}, 1500);
 };
 
 	
@@ -331,26 +381,26 @@ const closeQuestionDialog = () => {
 	
 	/* 试题按钮样式 */
 	.question-button {
-		padding: 14rpx 28rpx;
+		padding: 10rpx 20rpx;
 		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
 		color: #fff;
 		border: none;
-		border-radius: 12rpx;
-		font-size: 26rpx;
-		font-weight: 600;
+		border-radius: 8rpx;
+		font-size: 22rpx;
+		font-weight: 500;
 		transition: all 0.3s ease;
-		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.3);
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.25);
 	}
 
 	.question-button:hover {
 		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
-		transform: translateY(-2rpx);
-		box-shadow: 0 6rpx 16rpx rgba(24, 144, 255, 0.4);
+		transform: translateY(-1rpx);
+		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.35);
 	}
 
 	.question-button:active {
 		transform: translateY(0);
-		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.3);
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.25);
 	}
 	
 	/* 空状态样式 */
@@ -507,7 +557,7 @@ const closeQuestionDialog = () => {
 	
 	/* 表单样式 */
 	.form-item {
-		margin-bottom: 36rpx;
+		margin-bottom: 32rpx;
 	}
 	
 	.form-label {
@@ -520,10 +570,12 @@ const closeQuestionDialog = () => {
 	
 	.form-input {
 		width: 100%;
-		padding: 24rpx 28rpx;
+		padding: 32rpx 24rpx;
 		border: 2rpx solid #e9ecef;
-		border-radius: 16rpx;
-		font-size: 28rpx;
+		border-radius: 12rpx;
+		font-size: 26rpx;
+		line-height: 1.6;
+		min-height: 100rpx;
 		color: #2c3e50;
 		background-color: #f8f9fa;
 		transition: all 0.3s ease;
@@ -539,6 +591,13 @@ const closeQuestionDialog = () => {
 	
 	.form-input::placeholder {
 		color: #adb5bd;
+	}
+	
+	.char-count {
+		font-size: 24rpx;
+		color: #909399;
+		text-align: right;
+		margin-top: 8rpx;
 	}
 	
 	.form-textarea {
@@ -614,45 +673,45 @@ const closeQuestionDialog = () => {
 	.popup-footer {
 		display: flex;
 		justify-content: space-between;
-		gap: 24rpx;
+		gap: 20rpx;
 	}
 	
 	.cancel-button {
 		flex: 1;
-		padding: 24rpx;
+		padding: 18rpx;
 		background-color: #f8f9fa;
 		color: #6c757d;
 		border: 2rpx solid #e9ecef;
-		border-radius: 16rpx;
-		font-size: 28rpx;
-		font-weight: 600;
+		border-radius: 12rpx;
+		font-size: 26rpx;
+		font-weight: 500;
 		transition: all 0.3s ease;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.06);
 	}
 
 	.cancel-button:hover {
 		background-color: #e9ecef;
 		color: #495057;
-		transform: translateY(-2rpx);
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.12);
+		transform: translateY(-1rpx);
+		box-shadow: 0 3rpx 10rpx rgba(0, 0, 0, 0.1);
 	}
 
 	.cancel-button:active {
 		transform: translateY(0);
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.06);
 	}
 
 	.confirm-button {
 		flex: 1;
-		padding: 24rpx;
+		padding: 18rpx;
 		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
 		color: #fff;
 		border: none;
-		border-radius: 16rpx;
-		font-size: 28rpx;
-		font-weight: 600;
+		border-radius: 12rpx;
+		font-size: 26rpx;
+		font-weight: 500;
 		transition: all 0.3s ease;
-		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
+		box-shadow: 0 3rpx 12rpx rgba(24, 144, 255, 0.25);
 		position: relative;
 		overflow: hidden;
 	}
@@ -673,13 +732,80 @@ const closeQuestionDialog = () => {
 	}
 
 	.confirm-button:hover {
-		transform: translateY(-2rpx);
-		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.4);
+		transform: translateY(-1rpx);
+		box-shadow: 0 5rpx 18rpx rgba(24, 144, 255, 0.35);
 		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
 	}
 
 	.confirm-button:active {
 		transform: translateY(0);
-		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
+		box-shadow: 0 3rpx 12rpx rgba(24, 144, 255, 0.25);
+	}
+	
+	/* 小按钮样式 - 用于试卷名称输入弹窗 */
+	.cancel-button-small {
+		flex: 1;
+		padding: 12rpx;
+		background-color: #f8f9fa;
+		color: #6c757d;
+		border: 2rpx solid #e9ecef;
+		border-radius: 8rpx;
+		font-size: 22rpx;
+		font-weight: 500;
+		transition: all 0.3s ease;
+		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.06);
+	}
+
+	.cancel-button-small:hover {
+		background-color: #e9ecef;
+		color: #495057;
+		transform: translateY(-1rpx);
+		box-shadow: 0 3rpx 10rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.cancel-button-small:active {
+		transform: translateY(0);
+		box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.06);
+	}
+
+	.confirm-button-small {
+		flex: 1;
+		padding: 12rpx;
+		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		color: #fff;
+		border: none;
+		border-radius: 8rpx;
+		font-size: 22rpx;
+		font-weight: 500;
+		transition: all 0.3s ease;
+		box-shadow: 0 3rpx 12rpx rgba(24, 144, 255, 0.25);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.confirm-button-small::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+		transition: left 0.6s ease;
+	}
+
+	.confirm-button-small:hover::before {
+		left: 100%;
+	}
+
+	.confirm-button-small:hover {
+		transform: translateY(-1rpx);
+		box-shadow: 0 5rpx 18rpx rgba(24, 144, 255, 0.35);
+		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
+	}
+
+	.confirm-button-small:active {
+		transform: translateY(0);
+		box-shadow: 0 3rpx 12rpx rgba(24, 144, 255, 0.25);
 	}
 </style>

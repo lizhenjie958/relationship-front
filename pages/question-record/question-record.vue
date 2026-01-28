@@ -5,16 +5,16 @@
 		<view class="paper-info">
 			<view class="info-card">
 				<view class="info-item">
-					<text class="info-label">试卷ID：</text>
-					<text class="info-value">{{ paperId }}</text>
+					<text class="info-label">试卷名称：</text>
+					<text class="info-value">{{ paperName }}</text>
 				</view>
 				<view class="info-item">
 					<text class="info-label">主角：</text>
 					<text class="info-value">{{ protagonistName }}</text>
 				</view>
 				<view class="info-item">
-					<text class="info-label">出题人：</text>
-					<text class="info-value">{{ creatorName }}</text>
+					<text class="info-label">创建时间：</text>
+					<text class="info-value">{{ createTime }}</text>
 				</view>
 			</view>
 		</view>
@@ -43,7 +43,9 @@
 	// 试卷ID
 	const paperId = ref(props.id || 'P20260127001');
 	// 模拟数据
+	const paperName = ref('张三的关系试卷');
 	const protagonistName = ref('张三');
+	const createTime = ref('2024-01-28 10:00');
 	const creatorName = ref('系统管理员');
 	
 	// 页面挂载
