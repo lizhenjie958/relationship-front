@@ -13,7 +13,7 @@
 			}
 		},
 		{
-			"path": "pages/relation-manage/relation-manage",
+			"path": "pages/relationship-manager/relationship-manager",
 			"style": {
 				"navigationBarTitleText": "关系管理"
 			}
@@ -25,25 +25,25 @@
 			}
 		},
 		{
-			"path": "pages/answer-record/answer-record",
+			"path": "pages/answer-paper-detail/answer-paper-detail",
 			"style": {
 				"navigationBarTitleText": "答题记录"
 			}
 		},
 		{
-			"path": "pages/question-list/question-list",
+			"path": "pages/exam-paper-list/exam-paper-list",
 			"style": {
 				"navigationBarTitleText": "试卷列表"
 			}
 		},
 		{
-			"path": "pages/question-record/question-record",
+			"path": "pages/exam-paper-detail/exam-paper-detail",
 			"style": {
 				"navigationBarTitleText": "试卷详情"
 			}
 		},
 		{
-			"path": "pages/answer-list/answer-list",
+			"path": "pages/answer-paper-list/answer-paper-list",
 			"style": {
 				"navigationBarTitleText": "答题列表"
 			}

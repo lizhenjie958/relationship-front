@@ -113,7 +113,7 @@ const currentRelationId = ref(null);
 	// 跳转到关系管理页面
 const navigateToRelationManager = (id) => {
 	uni.navigateTo({
-		url: `/pages/relation-manage/relation-manage?id=${id}`,
+		url: `/pages/relationship-manager/relationship-manager?id=${id}`,
 		success: (res) => {
 			console.log('跳转成功:', res);
 		},
@@ -126,7 +126,7 @@ const navigateToRelationManager = (id) => {
 // 跳转到新增关系页面
 const navigateToAddRelation = () => {
 	uni.navigateTo({
-		url: '/pages/relation-manage/relation-manage',
+		url: '/pages/relationship-manager/relationship-manager',
 		success: (res) => {
 			console.log('跳转成功:', res);
 		},
@@ -145,7 +145,7 @@ const generateQuestion = (id) => {
 // 跳转到试题详情页
 const navigateToQuestionRecord = () => {
 	uni.navigateTo({
-		url: '/pages/question-record/question-record',
+		url: '/pages/exam-paper-detail/exam-paper-detail',
 		success: (res) => {
 			console.log('跳转成功:', res);
 		},

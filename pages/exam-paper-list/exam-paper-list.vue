@@ -84,7 +84,7 @@ const openMenuId = ref(null);
 // 跳转到答题记录页
 const goToRecord = (questionId) => {
 	uni.navigateTo({
-		url: `/pages/question-record/question-record?id=${questionId}`
+		url: `/pages/exam-paper-detail/exam-paper-detail?id=${questionId}`
 	});
 };
 

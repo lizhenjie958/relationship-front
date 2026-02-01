@@ -134,7 +134,7 @@ onMounted(() => {
 // 继续答题
 const continueAnswer = (recordId) => {
 	uni.navigateTo({
-		url: `/pages/answer-record/answer-record?id=${recordId}`
+		url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
 	});
 };
 </script>

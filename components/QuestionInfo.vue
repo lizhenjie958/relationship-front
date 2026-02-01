@@ -3,7 +3,7 @@
 		<!-- 题目信息区域 -->
 		<view class="question-section">
 			<view class="question-header">
-				<text class="question-title">{{ usageSource === 'question-record' ? '题目信息' : '答题详情' }}</text>
+				<text class="question-title">{{ usageSource === 'exam-paper-detail' ? '题目信息' : '答题详情' }}</text>
 				<text class="question-count">{{ currentQuestionIndex + 1 }} / {{ questions.length }}</text>
 			</view>
 			
@@ -195,7 +195,7 @@
 
 	// 检查是否应该显示答案
 	const shouldShowAnswer = () => {
-		return props.usageSource === 'question-record' || props.showAnswer;
+		return props.usageSource === 'exam-paper-detail' || props.showAnswer;
 	};
 
 	// 检查是否可以答题

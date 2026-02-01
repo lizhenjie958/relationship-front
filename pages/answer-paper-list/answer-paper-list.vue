@@ -126,14 +126,14 @@ const switchTab = (tabValue) => {
 // 跳转到试卷列表
 const goToQuestionList = () => {
 	uni.navigateTo({
-		url: '/pages/question-list/question-list'
+		url: '/pages/exam-paper-list/exam-paper-list'
 	});
 };
 
 // 跳转到答题记录详情
 const goToAnswerRecord = (recordId) => {
 	uni.navigateTo({
-		url: `/pages/answer-record/answer-record?id=${recordId}`
+		url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
 	});
 };
 

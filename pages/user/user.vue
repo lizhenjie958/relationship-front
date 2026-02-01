@@ -111,7 +111,7 @@
 	// 跳转到答题记录
 	const navigateToAnswerList = () => {
 		uni.navigateTo({
-			url: '/pages/answer-list/answer-list',
+			url: '/pages/answer-paper-list/answer-paper-list',
 			success: (res) => {
 				console.log('跳转成功:', res);
 			},
@@ -128,7 +128,7 @@
 	// 跳转到我的题库
 	const navigateToQuestionBank = () => {
 		uni.navigateTo({
-			url: '/pages/question-list/question-list',
+			url: '/pages/exam-paper-list/exam-paper-list',
 			success: (res) => {
 				console.log('跳转成功:', res);
 			},
