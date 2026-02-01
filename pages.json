@@ -7,7 +7,7 @@
 			}
 		},
 		{
-			"path": "pages/relation/relation",
+			"path": "pages/relationship-list/relationship-list",
 			"style": {
 				"navigationBarTitleText": "关系"
 			}
@@ -70,7 +70,7 @@
 			},
 			{
 				"text": "关系",
-				"pagePath": "pages/relation/relation",
+				"pagePath": "pages/relationship-list/relationship-list",
 				"iconPath": "/static/images/relation.png",
 				"selectedIconPath": "/static/images/relation-s.png"
 			},

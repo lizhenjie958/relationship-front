@@ -1,6 +1,6 @@
 <template>
-	<view class="relation">
-		<view class="relationTable">
+	<view class="relationship-list">
+		<view class="relationship-list-table">
 			<view v-if="loading" class="loading">
 				<view class="loading-spinner"></view>
 				<text class="loading-text">加载中...</text>
@@ -92,7 +92,7 @@
 <script setup>
 	import { ref, onMounted } from 'vue';
 	import { onReachBottom, onShow } from '@dcloudio/uni-app';
-	import { queryProtagonistPage } from "@/api/relationApi.js";
+	import { queryRelationshipList } from "@/api/relationApi.js";
 	import FloatingButton from "@/components/FloatingButton.vue";
 	
 	// 数据状态
@@ -193,22 +193,25 @@ const confirmPaperName = () => {
 	const queryPage = async() => {
 		loading.value = true;
 		try {
-			const res = await queryProtagonistPage(reqParam);
-			if (res && res.data) {
-				protagonData.value.protagonList = [...protagonData.value.protagonList, ...res.data.list];
+			// 使用新的分页查询关系列表接口
+			const res = await queryRelationshipList(reqParam);
+			console.log('查询关系列表响应:', res);
+			
+			if (res && res.code === 200 && res.data) {
+				// 处理新接口返回的数据格式，进行字段映射
+				const formattedList = res.data.list.map(item => ({
+					id: item.id,
+					name: item.protagonist, // 映射protagonist到name
+					smallPicUrl: item.picUrl, // 映射picUrl到smallPicUrl
+					remark: item.remark || ''
+				}));
+				
+				protagonData.value.protagonList = [...protagonData.value.protagonList, ...formattedList];
 				protagonData.value.total = res.data.total;
 			}
 		} catch (error) {
-			console.error('获取主角列表失败:', error);
+			console.error('获取关系列表失败:', error);
 		} finally {
-			// 修改模拟数据，添加备注字段
-			protagonData.value.protagonList = [
-				{ id: 1, name: '张三', smallPicUrl: '', remark: '这是一个测试备注，最多显示20字' },
-				{ id: 2, name: '李四', smallPicUrl: '', remark: '简短备注' },
-				{ id: 3, name: '王五', smallPicUrl: '', remark: '这是一个超过20字的长备注，需要截断显示' },
-				{ id: 4, name: '赵六', smallPicUrl: '', remark: '' },
-				{ id: 5, name: '钱七', smallPicUrl: '', remark: '测试备注' }
-			];
 			loading.value = false;
 		}
 	};
@@ -245,13 +248,13 @@ const confirmPaperName = () => {
 </script>
 
 <style lang="scss" scoped>
-	.relation {
+	.relationship-list {
 		padding: 20rpx;
 		background-color: #f5f7fa;
 		min-height: 100vh;
 	}
 
-	.relationTable {
+	.relationship-list-table {
 		overflow: hidden;
 	}
 	

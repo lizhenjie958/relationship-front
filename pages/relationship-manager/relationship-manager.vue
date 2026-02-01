@@ -1,10 +1,28 @@
 <template>
 	<view class="container">
+		<!-- 加载状态 -->
+		<view v-if="loading" class="loading-container">
+			<view class="loading-spinner"></view>
+			<text class="loading-text">加载中...</text>
+		</view>
+
+		<view v-else>
+
+		<!-- 编辑禁用提示 -->
+		<view v-if="editDisabled && relationshipId" class="disabled-tip">
+			<text class="disabled-icon">⚠️</text>
+			<text class="disabled-text">获取详情失败，禁止编辑</text>
+			<button class="refresh-btn" @click="fetchRelationshipDetail(relationshipId)">
+				<text class="refresh-icon">🔄</text>
+				<text class="refresh-text">重新加载</text>
+			</button>
+		</view>
+
 		<view class="header">
 			<view class="avatar-info">
 				<!-- 头像 -->
 				<view class="avatar-section">
-					<view class="avatar-wrapper" @click="chooseUserAvatar">
+					<view class="avatar-wrapper" @click="!editDisabled && chooseUserAvatar" :class="{ 'disabled': editDisabled }">
 						<image v-if="userInfo.avatar" :src="userInfo.avatar" class="user-avatar"></image>
 						<view v-else class="user-avatar-placeholder">
 							<text class="placeholder-text">点击上传</text>
@@ -19,7 +37,7 @@
 				<view class="info-section">
 					<text class="info-label">姓名</text>
 					<view class="info-content">
-						<view v-if="!editState.name" class="info-value" @click="editState.name = true">
+						<view v-if="!editState.name" class="info-value" @click="!editDisabled && (editState.name = true)" :class="{ 'disabled': editDisabled }">
 							{{ userInfo.name || '点击修改' }}
 							<text class="edit-hint">✏️</text>
 						</view>
@@ -30,6 +48,7 @@
 							@keyup.enter="editState.name = false"
 							placeholder="请输入姓名"
 							auto-focus
+							:disabled="editDisabled"
 						/>
 					</view>
 				</view>
@@ -38,7 +57,7 @@
 				<view class="info-section remark-section">
 					<text class="info-label">备注</text>
 					<view class="info-content">
-						<view v-if="!editState.remark" class="info-value remark-value" @click="editState.remark = true">
+						<view v-if="!editState.remark" class="info-value remark-value" @click="!editDisabled && (editState.remark = true)" :class="{ 'disabled': editDisabled }">
 							{{ userInfo.remark || '点击修改' }}
 							<text class="edit-hint">✏️</text>
 						</view>
@@ -49,6 +68,7 @@
 							placeholder="请输入备注"
 							rows="3"
 							auto-focus
+							:disabled="editDisabled"
 						/>
 					</view>
 				</view>
@@ -70,14 +90,15 @@
 								v-model="item.relation" 
 								class="relation-input" 
 								placeholder="请输入关系"
-								:class="{ 'error': item.error && !item.relation }"
+								:class="{ 'error': item.error && !item.relation, 'disabled': editDisabled }"
+								:disabled="editDisabled"
 							/>
 							<view v-if="item.error && !item.relation" class="error-hint">请填写关系</view>
 						</view>
 					</view>
 					<view class="table-cell">
 						<view class="avatar-cell">
-							<view class="relation-avatar-wrapper" @click="chooseAvatar(index)">
+							<view class="relation-avatar-wrapper" @click="!editDisabled && chooseAvatar(index)" :class="{ 'disabled': editDisabled }">
 								<image v-if="item.avatar" :src="item.avatar" class="avatar-image" mode="aspectFill"></image>
 								<view v-else class="avatar-placeholder">
 									<text class="placeholder-text">点击上传</text>
@@ -90,10 +111,10 @@
 					</view>
 					<view class="table-cell">
 						<view class="action-buttons">
-							<button class="action-btn add-btn" @click="addRow(index)">
+							<button class="action-btn add-btn" @click="!editDisabled && addRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
 								<text class="btn-icon">+</text>
 							</button>
-							<button class="action-btn delete-btn" @click="deleteRow(index)">
+							<button class="action-btn delete-btn" @click="!editDisabled && deleteRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
 								<text class="btn-icon">-</text>
 							</button>
 						</view>
@@ -103,16 +124,20 @@
 		</view>
 
 		<view class="footer">
-			<button class="save-btn" @click="saveData">
+			<button class="save-btn" @click="saveData" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
 				<text class="save-btn-text">保存</text>
 			</button>
+		</view>
+
 		</view>
 	</view>
 </template>
 
 <script setup>
-	import { ref, reactive, onMounted } from 'vue';
+	import { ref, reactive } from 'vue';
+	import { onLoad } from '@dcloudio/uni-app';
 	import { uploadFile, uploadWithProgress } from '../../utils/upload';
+	import { addRelationship, queryRelationshipDetail, updateRelationship } from '../../api/relationApi';
 
 	// 用户信息
 	const userInfo = reactive({
@@ -132,10 +157,72 @@
 		{ relation: '', avatar: '' }
 	]);
 
+	// 当前编辑的关系ID
+	const relationshipId = ref(null);
+	// 编辑禁用状态
+	const editDisabled = ref(false);
+	// 加载状态
+	const loading = ref(false);
+
 	// 初始化数据
-	onMounted(() => {
-		// 这里可以添加从后端获取数据的逻辑
+	onLoad((options) => {
+		if (options.id) {
+			// 有ID参数，说明是编辑操作
+			relationshipId.value = options.id;
+			// 调用查询详情接口获取数据
+			fetchRelationshipDetail(options.id);
+		}
 	});
+
+	// 获取关系详情
+	const fetchRelationshipDetail = async (id) => {
+		loading.value = true;
+		editDisabled.value = true;
+		try {
+			const response = await queryRelationshipDetail({ id });
+			console.log('查询详情响应:', response);
+			
+			if (response && response.code === 200 && response.data) {
+				const data = response.data;
+				// 更新用户信息
+				userInfo.name = data.protagonist || '';
+				userInfo.avatar = data.picUrl || '';
+				userInfo.remark = data.remark || '';
+				
+				// 更新关系列表
+				if (data.relationList && data.relationList.length > 0) {
+					relationList.value = data.relationList.map(item => ({
+						relation: item.relationName || '',
+						avatar: item.picUrl || '',
+						error: false
+					}));
+				} else {
+					relationList.value = [{ relation: '', avatar: '' }];
+				}
+				// 获取成功，允许编辑
+				editDisabled.value = false;
+			} else {
+				uni.showToast({ 
+					title: '获取详情失败，禁止编辑', 
+					icon: 'none',
+					duration: 2000
+				});
+				// 获取失败，禁止编辑
+				editDisabled.value = true;
+			}
+		} catch (error) {
+			console.error('获取详情失败:', error);
+			uni.showToast({ 
+				title: '获取详情失败，禁止编辑', 
+				icon: 'none',
+				duration: 2000
+			});
+			// 获取失败，禁止编辑
+			editDisabled.value = true;
+		} finally {
+			loading.value = false;
+		}
+	};
 
 	// 添加行
 	const addRow = (index) => {
@@ -277,7 +364,8 @@
 
 
 	// 保存数据
-	const saveData = () => {
+	const saveData = async () => {
+		console.log('开始保存数据');
 		let isValid = true;
 		
 		// 验证关系数据
@@ -293,8 +381,64 @@
 			return;
 		}
 		
-		// 这里可以添加保存数据到后端的逻辑
-		uni.showToast({ title: '保存成功', icon: 'success' });
+		try {
+			// 准备API请求数据
+			const requestData = {
+				id: relationshipId.value,
+				protagonist: userInfo.name || '',
+				picUrl: userInfo.avatar || '',
+				remark: userInfo.remark || '',
+				relationList: relationList.value.map(item => ({
+					relationName: item.relation || '',
+					picUrl: item.avatar || ''
+				}))
+			};
+			
+			console.log('准备提交的数据:', requestData);
+			console.log('relationshipId.value:', relationshipId.value);
+			
+			// 根据是否存在ID决定调用哪个接口
+			let response;
+			if (relationshipId.value) {
+				// 调用更新关系接口
+				console.log('调用更新关系接口');
+				response = await updateRelationship(requestData);
+			} else {
+				// 调用新增关系接口
+				console.log('调用新增关系接口');
+				response = await addRelationship(requestData);
+			}
+			
+			console.log('API响应结果:', response);
+			
+			// 处理响应
+			if (response && response.code === 200) {
+				uni.showToast({ 
+					title: '保存成功', 
+					icon: 'success',
+					duration: 1500,
+					complete: () => {
+						// 保存成功后返回到列表页
+						setTimeout(() => {
+							uni.navigateBack({
+								delta: 1,
+								success: () => {
+									console.log('返回列表页成功');
+								}
+							});
+						}, 1000);
+					}
+				});
+			} else {
+				uni.showToast({ 
+					title: response?.msg || '保存失败', 
+					icon: 'none' 
+				});
+			}
+		} catch (error) {
+			console.error('保存数据失败:', error);
+			uni.showToast({ title: '保存失败，请重试', icon: 'none' });
+		}
 	};
 </script>
 
@@ -326,6 +470,135 @@
 		--spacing-md: 30rpx;
 		--spacing-lg: 40rpx;
 		--spacing-xl: 50rpx;
+	}
+
+	/* 加载状态 */
+	.loading-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 100rpx 0;
+		min-height: 80vh;
+	}
+
+	.loading-spinner {
+		width: 60rpx;
+		height: 60rpx;
+		border: 4rpx solid var(--border-color-light);
+		border-top-color: var(--primary-color);
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin-bottom: 20rpx;
+	}
+
+	@keyframes spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	.loading-text {
+		font-size: 28rpx;
+		color: var(--text-color-secondary);
+	}
+
+	/* 编辑禁用提示 */
+	.disabled-tip {
+		background-color: var(--warning-color);
+		color: white;
+		padding: 20rpx;
+		border-radius: var(--border-radius-md);
+		margin-bottom: var(--spacing-md);
+		display: flex;
+		align-items: center;
+		gap: 15rpx;
+		box-shadow: var(--shadow-sm);
+	}
+
+	.disabled-icon {
+		font-size: 32rpx;
+	}
+
+	.disabled-text {
+		flex: 1;
+		font-size: 26rpx;
+		font-weight: 500;
+	}
+
+	.refresh-btn {
+		background-color: rgba(255, 255, 255, 0.2);
+		color: white;
+		border: 2rpx solid rgba(255, 255, 255, 0.4);
+		border-radius: var(--border-radius-sm);
+		padding: 10rpx 20rpx;
+		font-size: 24rpx;
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
+		transition: all 0.3s ease;
+	}
+
+	.refresh-btn:hover {
+		background-color: rgba(255, 255, 255, 0.3);
+	}
+
+	.refresh-btn:active {
+		background-color: rgba(255, 255, 255, 0.4);
+		transform: scale(0.95);
+	}
+
+	.refresh-icon {
+		font-size: 20rpx;
+	}
+
+	.refresh-text {
+		font-size: 22rpx;
+	}
+
+	/* 禁用状态样式 */
+	.avatar-wrapper.disabled,
+	.relation-avatar-wrapper.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.info-value.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.info-value.disabled:active {
+		background-color: var(--border-color-light);
+		transform: none;
+	}
+
+	.relation-input.disabled,
+	.info-input:disabled,
+	.info-textarea:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		background-color: var(--border-color-light);
+	}
+
+	.action-btn.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.action-btn.disabled:active {
+		transform: none;
+		box-shadow: none;
+	}
+
+	.save-btn.disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		background-color: var(--text-color-light);
+	}
+
+	.save-btn.disabled:active {
+		transform: none;
+		box-shadow: none;
 	}
 
 	/* 容器样式 */

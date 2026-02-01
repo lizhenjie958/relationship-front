@@ -1,8 +1,21 @@
 import {request} from "@/utils/request.js"
-export function queryProtagonistPage(data = {}){
-	return request({url:"/protagonist/queryPage",data})
+
+// 分页查询关系列表
+export function queryRelationshipList(data = {}){
+	return request({url:"/relationship/queryList",data})
 }
 
-export function getTosCredential(data = {}){
-	return request({url:"/tos/credential",data})
+// 新增关系
+export function addRelationship(data = {}){
+	return request({url:"/relationship/add",data})
+}
+
+// 查询关系详情
+export function queryRelationshipDetail(data = {}){
+	return request({url:"/relationship/queryDetail",data})
+}
+
+// 更新关系
+export function updateRelationship(data = {}){
+	return request({url:"/relationship/update",data})
 }
