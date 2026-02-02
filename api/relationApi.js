@@ -19,3 +19,8 @@ export function queryRelationshipDetail(data = {}){
 export function updateRelationship(data = {}){
 	return request({url:"/relationship/update",data})
 }
+
+// 生成试题
+export function generateExamPaper(data = {}){
+	return request({url:"/examPaper/generate",data})
+}

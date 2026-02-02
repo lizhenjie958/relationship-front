@@ -91,9 +91,9 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-	import { onReachBottom, onShow } from '@dcloudio/uni-app';
-	import { queryRelationshipList } from "@/api/relationApi.js";
-	import FloatingButton from "@/components/FloatingButton.vue";
+import { onReachBottom, onShow } from '@dcloudio/uni-app';
+import { queryRelationshipList, generateExamPaper } from "@/api/relationApi.js";
+import FloatingButton from "@/components/FloatingButton.vue";
 	
 	// 数据状态
 	const protagonData = ref({
@@ -109,6 +109,7 @@ const generatingQuestion = ref(false);
 const showPaperNameDialog = ref(false);
 const paperName = ref('');
 const currentRelationId = ref(null);
+const currentExamPaperId = ref(null);
 	
 	// 跳转到关系管理页面
 const navigateToRelationManager = (id) => {
@@ -145,7 +146,7 @@ const generateQuestion = (id) => {
 // 跳转到试题详情页
 const navigateToQuestionRecord = () => {
 	uni.navigateTo({
-		url: '/pages/exam-paper-detail/exam-paper-detail',
+		url: `/pages/exam-paper-detail/exam-paper-detail?id=${currentExamPaperId.value}`,
 		success: (res) => {
 			console.log('跳转成功:', res);
 		},
@@ -169,7 +170,7 @@ const closePaperNameDialog = () => {
 };
 
 // 确认试卷名称
-const confirmPaperName = () => {
+const confirmPaperName = async () => {
 	if (!paperName.value.trim()) {
 		uni.showToast({
 			title: '请输入试卷名称',
@@ -181,11 +182,35 @@ const confirmPaperName = () => {
 	showPaperNameDialog.value = false;
 	generatingQuestion.value = true;
 	
-	// 模拟生成试题的过程
-	setTimeout(() => {
+	try {
+		// 调用生成试题接口
+		const response = await generateExamPaper({
+			relationshipId: currentRelationId.value,
+			examPaperName: paperName.value.trim()
+		});
+		
+		console.log('生成试题响应:', response);
+		
+		if (response && response.code === 200 && response.id) {
+			// 保存试卷ID
+			currentExamPaperId.value = response.id;
+			generatingQuestion.value = false;
+			showQuestionDialog.value = true;
+		} else {
+			uni.showToast({
+				title: response?.msg || '生成试题失败',
+				icon: 'none'
+			});
+			generatingQuestion.value = false;
+		}
+	} catch (error) {
+		console.error('生成试题失败:', error);
+		uni.showToast({
+			title: '生成试题失败，请重试',
+			icon: 'none'
+		});
 		generatingQuestion.value = false;
-		showQuestionDialog.value = true;
-	}, 1500);
+	}
 };
 
 	
