@@ -1,4 +1,110 @@
-import md5 from 'md5';
+// MD5 implementation
+function md5(str) {
+    function rotl(n, k) {
+        return (n << k) | (n >>> (32 - k));
+    }
+
+    function toHex(i) {
+        const hexcase = 0;
+        const hex_tab = hexcase ? '0123456789ABCDEF' : '0123456789abcdef';
+        return hex_tab.charAt((i >> 4) & 0x0F) + hex_tab.charAt(i & 0x0F);
+    }
+
+    function md5cycle(x, k) {
+        let a = x[0];
+        let b = x[1];
+        let c = x[2];
+        let d = x[3];
+
+        a += (b & c | ~b & d) + k[0] + 0xd76aa478;
+        a = rotl(a, 7);
+        a += b;
+        b += (c & d | ~c & a) + k[1] + 0xe8c7b756;
+        b = rotl(b, 12);
+        b += c;
+        c += (d & a | ~d & b) + k[2] + 0x242070db;
+        c = rotl(c, 17);
+        c += d;
+        d += (a & b | ~a & c) + k[3] + 0xc1bdceee;
+        d = rotl(d, 22);
+        d += a;
+
+        a += (b & d | ~b & c) + k[4] + 0xf57c0faf;
+        a = rotl(a, 7);
+        a += b;
+        b += (c & a | ~c & d) + k[5] + 0x4787c62a;
+        b = rotl(b, 12);
+        b += c;
+        c += (d & b | ~d & a) + k[6] + 0xa8304613;
+        c = rotl(c, 17);
+        c += d;
+        d += (a & c | ~a & b) + k[7] + 0xfd469501;
+        d = rotl(d, 22);
+        d += a;
+
+        a += (b ^ c ^ d) + k[8] + 0x698098d8;
+        a = rotl(a, 7);
+        a += b;
+        b += (c ^ d ^ a) + k[9] + 0x8b44f7af;
+        b = rotl(b, 12);
+        b += c;
+        c += (d ^ a ^ b) + k[10] + 0xffff5bb1;
+        c = rotl(c, 17);
+        c += d;
+        d += (a ^ b ^ c) + k[11] + 0x895cd7be;
+        d = rotl(d, 22);
+        d += a;
+
+        a += (c ^ (b | ~d)) + k[12] + 0x6b901122;
+        a = rotl(a, 7);
+        a += b;
+        b += (d ^ (c | ~a)) + k[13] + 0xfd987193;
+        b = rotl(b, 12);
+        b += c;
+        c += (a ^ (d | ~b)) + k[14] + 0xa679438e;
+        c = rotl(c, 17);
+        c += d;
+        d += (b ^ (a | ~c)) + k[15] + 0x49b40821;
+        d = rotl(d, 22);
+        d += a;
+
+        return [a, b, c, d];
+    }
+
+    let nblk = ((str.length + 8) >> 6) + 1;
+    let blks = new Array(nblk * 16);
+    for (let i = 0; i < nblk * 16; i++) {
+        blks[i] = 0;
+    }
+    for (let i = 0; i < str.length; i++) {
+        blks[i >> 2] |= str.charCodeAt(i) << ((i % 4) * 8);
+    }
+    blks[str.length >> 2] |= 0x80 << ((str.length % 4) * 8);
+    blks[nblk * 16 - 2] = str.length * 8;
+
+    let md5 = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
+    let k = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+    for (let i = 0; i < nblk; i++) {
+        let kk = new Array(16);
+        for (let j = 0; j < 16; j++) {
+            kk[j] = blks[i * 16 + j];
+        }
+        let t = md5cycle(md5, kk);
+        for (let j = 0; j < 4; j++) {
+            md5[j] += t[j];
+        }
+    }
+
+    let result = '';
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            result += toHex((md5[i] >> (j * 8)) & 0x000000FF);
+        }
+    }
+
+    return result;
+}
 
 // 跨环境兼容的 Base64 编码函数
 function base64Encode(str) {
