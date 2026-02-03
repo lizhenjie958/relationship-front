@@ -1,4 +1,5 @@
-const domain = "http://127.0.0.1:8888";
+// 使用Vite环境变量
+const domain = import.meta.env.VITE_API_DOMAIN || "http://127.0.0.1:8888";
 import { sign } from "./signUtil.js";
 
 export function request(config = {}) {

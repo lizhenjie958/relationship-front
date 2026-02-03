@@ -89,6 +89,8 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
+	import { onLoad } from '@dcloudio/uni-app';
+	import { queryTargetPath } from '@/api/shareApi.js';
 
 	// 今日日期
 	const todayDate = ref('');
@@ -123,20 +125,50 @@
 		return dates;
 	};
 
-	// 页面加载时初始化
-onMounted(() => {
-	// 设置今日日期
-	todayDate.value = formatDate(new Date());
-	// 设置已答题日期
-	answeredDates.value = generateAnsweredDates();
-});
+	// 处理分享code，获取跳转路径
+	const handleShareCode = async (shareCode) => {
+		// 验证shareCode是否为8位字符串
+		if (shareCode && /^[a-zA-Z0-9]{8}$/.test(shareCode)) {
+			try {
+				// 调用查询目标路径接口
+				const response = await queryTargetPath({
+					shareCode: shareCode
+				});
+				
+				if (response.code === 200 && response.data) {
+					// 根据返回路径跳转
+					uni.navigateTo({
+						url: response.data
+					});
+				}
+			} catch (error) {
+				console.error('调用查询目标路径接口失败:', error);
+			}
+		}
+	};
 
-// 继续答题
-const continueAnswer = (recordId) => {
-	uni.navigateTo({
-		url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
+	// 页面加载时获取URL参数
+	onLoad((options) => {
+		// 解析URL参数中的shareCode
+		if (options.shareCode) {
+			handleShareCode(options.shareCode);
+		}
 	});
-};
+
+	// 页面加载时初始化
+	onMounted(() => {
+		// 设置今日日期
+		todayDate.value = formatDate(new Date());
+		// 设置已答题日期
+		answeredDates.value = generateAnsweredDates();
+	});
+
+	// 继续答题
+	const continueAnswer = (recordId) => {
+		uni.navigateTo({
+			url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
+		});
+	};
 </script>
 
 <style scoped>

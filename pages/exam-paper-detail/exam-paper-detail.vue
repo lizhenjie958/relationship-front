@@ -20,17 +20,19 @@
 		</view>
 		
 		<!-- 题目信息组件 -->
-		<QuestionInfo 
-			:paperId="paperId"
-			:usageSource="'question-record'"
-			:showAnswer="true"
-		/>
+<QuestionInfo 
+	:paperId="paperId"
+	:usageSource="'exam-paper-detail'"
+	:showAnswer="true"
+	:questions="questions"
+/>
 	</view>
 </template>
 
 <script setup>
 	import { ref, onMounted } from 'vue';
 	import QuestionInfo from '@/components/QuestionInfo.vue';
+	import { request } from '@/utils/request.js';
 	
 	// 接收外部传入的试卷ID参数
 	const props = defineProps({
@@ -41,17 +43,62 @@
 	});
 	
 	// 试卷ID
-	const paperId = ref(props.id || 'P20260127001');
-	// 模拟数据
-	const paperName = ref('张三的关系试卷');
-	const protagonistName = ref('张三');
-	const createTime = ref('2024-01-28 10:00');
+	const paperId = ref(props.id || '');
+	// 试卷信息
+	const paperName = ref('');
+	const protagonistName = ref('');
+	const createTime = ref('');
 	const creatorName = ref('系统管理员');
+	// 题目数据
+	const questions = ref([]);
+	
+	// 获取试卷详情
+	const fetchPaperDetail = async () => {
+		if (!paperId.value) {
+			uni.showToast({
+				title: '试卷ID不能为空',
+				icon: 'none'
+			});
+			return;
+		}
+		
+		try {
+			const response = await request({
+				url: '/examPaper/queryDetail',
+				method: 'POST',
+				data: {
+					id: paperId.value
+				}
+			});
+			
+			if (response.code === 200) {
+				const data = response.data;
+				// 更新试卷信息
+				paperName.value = data.name;
+				protagonistName.value = data.protagonistInfoDTO.protagonist;
+				createTime.value = data.createTime;
+				// 更新题目数据
+				questions.value = data.questionDTOList;
+				console.log('Fetched questions:', questions.value);
+			} else {
+				uni.showToast({
+					title: '获取试卷详情失败',
+					icon: 'none'
+				});
+			}
+		} catch (error) {
+			console.error('获取试卷详情失败:', error);
+			uni.showToast({
+				title: '获取试卷详情失败',
+				icon: 'none'
+			});
+		}
+	};
 	
 	// 页面挂载
 	onMounted(() => {
-		// 这里可以根据传入的试卷ID获取实际数据
-		console.log('Question record page mounted with paperId:', paperId.value);
+		// 根据传入的试卷ID获取实际数据
+		fetchPaperDetail();
 	});
 </script>
 

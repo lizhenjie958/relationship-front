@@ -1,5 +1,5 @@
 <template>
-	<view class="relationship-list">
+	<view class="relationship-list" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
 		<view class="relationship-list-table">
 			<view v-if="loading" class="loading">
 				<view class="loading-spinner"></view>
@@ -102,7 +102,10 @@ import FloatingButton from "@/components/FloatingButton.vue";
 	})
 	const reqParam ={pageNo:1,pageSize:15};
 	const loading = ref(false);
-	
+
+	// 下拉刷新状态
+	const refresherTriggered = ref(false);
+
 	// 生成试题状态
 const showQuestionDialog = ref(false);
 const generatingQuestion = ref(false);
@@ -261,7 +264,26 @@ const confirmPaperName = async () => {
 		
 	});
 
-	// 页面显示时刷新数据
+	// 下拉刷新事件处理
+const onRefresh = async () => {
+	// 开始刷新，显示loading
+	refresherTriggered.value = true;
+	// 重置页码
+	reqParam.pageNo = 1;
+	// 清空列表
+	protagonData.value.protagonList = [];
+	// 重新获取数据
+	await queryPage();
+	// 刷新完成，隐藏loading
+	refresherTriggered.value = false;
+};
+
+// 下拉过程事件处理（可选）
+const onRefresherPulling = () => {
+	// 可以在这里添加下拉过程中的动画或状态更新
+};
+
+// 页面显示时刷新数据
 	onShow(() => {
 		// 重置页码
 		reqParam.pageNo = 1;

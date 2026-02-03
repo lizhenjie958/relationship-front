@@ -1,5 +1,5 @@
 <template>
-	<view class="question-list-container">
+	<view class="question-list-container" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
 		
 		<view class="table-container">
 			<!-- 表格头部 -->
@@ -8,52 +8,44 @@
 				<view class="table-cell name-cell">主角</view> 
 				<view class="table-cell avatar-cell">头像</view>
 				<view class="table-cell time-cell">创建时间</view>
-				<view class="table-cell action-cell">操作</view>
 			</view>
 
 			<!-- 表格内容 -->
 			<view class="table-body">
-				<view v-for="(item, index) in questions" :key="item.id" class="table-row">
-					<view class="table-cell paper-name-cell">
-						<text class="paper-name" @click="goToRecord(item.id)">{{ item.paperName }}</text>
-					</view>
-					<view class="table-cell name-cell">
-						<text class="name">{{ item.name }}</text>
-					</view>
-					<view class="table-cell avatar-cell">
-						<view class="avatar">
-							<image :src="item.avatar" class="avatar-image" />
+				<view v-for="(item, index) in questions" :key="item.id" class="swipe-cell">
+					<!-- 左滑操作按钮 -->
+			<view class="swipe-actions">
+				<button class="swipe-action share-action" @click="shareQuestion(item.id)">
+					<text class="action-icon">📤</text>
+					<text class="action-text">分享</text>
+				</button>
+				<button class="swipe-action delete-action" @click="deleteQuestion(item.id)">
+					<text class="action-icon">🗑️</text>
+					<text class="action-text">删除</text>
+				</button>
+			</view>
+					<!-- 主内容区域 -->
+					<view 
+						class="table-row"
+						@touchstart="handleTouchStart($event, index)"
+						@touchmove="handleTouchMove($event, index)"
+						@touchend="handleTouchEnd($event, index)"
+						:style="{ transform: `translateX(${swipeOffset[index] || 0}rpx)` }"
+						@click="goToRecord(item.id)"
+					>
+						<view class="table-cell paper-name-cell">
+							<text class="paper-name">{{ item.paperName }}</text>
 						</view>
-					</view>
-					<view class="table-cell time-cell">
-						<text class="create-time">{{ item.createTime }}</text>
-					</view>
-					<view class="table-cell action-cell">
-						<view class="action-menu">
-							<button class="action-menu-button" @click="toggleActionMenu(item.id)">
-								<text class="menu-icon">⋮</text>
-							</button>
-							<view 
-								v-if="openMenuId === item.id" 
-								:class="[
-									'action-menu-dropdown',
-									index === 0 ? 'dropdown-down' : '',
-									index === questions.length - 1 ? 'dropdown-up' : ''
-								]"
-							>
-								<button class="menu-item share-item" @click.stop="shareQuestion(item.id)">
-									<text class="menu-icon">📤</text>
-									<text class="menu-text">分享</text>
-								</button>
-								<button class="menu-item detail-item" @click.stop="goToRecord(item.id)">
-									<text class="menu-icon">📋</text>
-									<text class="menu-text">详情</text>
-								</button>
-								<button class="menu-item delete-item" @click.stop="deleteQuestion(item.id)">
-									<text class="menu-icon">🗑️</text>
-									<text class="menu-text">删除</text>
-								</button>
+						<view class="table-cell name-cell">
+							<text class="name">{{ item.name }}</text>
+						</view>
+						<view class="table-cell avatar-cell">
+							<view class="avatar">
+								<image :src="item.avatar" class="avatar-image" />
 							</view>
+						</view>
+						<view class="table-cell time-cell">
+							<text class="create-time">{{ item.createTime }}</text>
 						</view>
 					</view>
 				</view>
@@ -69,17 +61,20 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { request } from '@/utils/request.js';
+import { readyShare, completeShare } from '@/api/shareApi.js';
 
-// 模拟试卷数据
-const questions = ref([
-	{ id: 1, name: '张三', avatar: 'https://via.placeholder.com/50', paperName: '张三的关系试卷', createTime: '2024-01-28 10:00' },
-	{ id: 2, name: '李四', avatar: 'https://via.placeholder.com/50', paperName: '李四的关系试卷', createTime: '2024-01-27 15:30' },
-	{ id: 3, name: '王五', avatar: 'https://via.placeholder.com/50', paperName: '王五的关系试卷', createTime: '2024-01-26 09:15' },
-	{ id: 4, name: '赵六', avatar: 'https://via.placeholder.com/50', paperName: '赵六的关系试卷', createTime: '2024-01-25 14:45' }
-]);
+// 试卷数据
+const questions = ref([]);
 
-// 操作菜单状态
-const openMenuId = ref(null);
+// 滑动相关数据
+const swipeOffset = ref({}); // 存储每个项目的滑动偏移量
+const startX = ref({}); // 存储每个项目的起始触摸X坐标
+const isSwipping = ref({}); // 标记每个项目是否正在滑动
+const ACTION_WIDTH = 260; // 操作按钮总宽度（两个按钮各130rpx）
+
+// 下拉刷新状态
+const refresherTriggered = ref(false);
 
 // 跳转到答题记录页
 const goToRecord = (questionId) => {
@@ -88,50 +83,217 @@ const goToRecord = (questionId) => {
 	});
 };
 
-// 切换操作菜单
-const toggleActionMenu = (questionId) => {
-	if (openMenuId.value === questionId) {
-		openMenuId.value = null;
-	} else {
-		openMenuId.value = questionId;
-	}
-};
-
 // 分享试卷
-const shareQuestion = (questionId) => {
-	uni.showToast({
-		title: '分享功能开发中',
-		icon: 'none'
-	});
+const shareQuestion = async (questionId) => {
+	// 关闭所有滑动
+	resetAllSwipe();
+	
+	try {
+		// 调用准备分享接口
+		const response = await readyShare({
+			sourceType: 1,
+			sourceId: questionId
+		});
+		
+		if (response.code === 200 && response.data) {
+			// 准备分享成功，吊起微信分享
+			uni.share({
+				provider: 'weixin',
+				scene: 'WXSceneSession', // 分享到微信好友
+				type: 0, // 文本类型
+				title: '我分享了一份试卷',
+				desc: '快来看看这份试卷吧！',
+				path: `/pages/index/index?shareCode=${response.data}`,
+				success: async () => {
+					// 分享成功，调用分享完成接口
+					try {
+						await completeShare({
+							shareId: response.data
+						});
+					} catch (error) {
+						console.error('调用分享完成接口失败:', error);
+					}
+					uni.showToast({
+						title: '分享成功',
+						icon: 'success'
+					});
+				},
+				fail: (error) => {
+					console.error('分享失败:', error);
+					uni.showToast({
+						title: '分享失败',
+						icon: 'none'
+					});
+				}
+			});
+		} else {
+			uni.showToast({
+				title: response.msg || '分享准备失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('调用准备分享接口失败:', error);
+		uni.showToast({
+			title: '分享准备失败，请稍后重试',
+			icon: 'none'
+		});
+	}
 };
 
 // 删除试卷
 const deleteQuestion = (questionId) => {
+	// 关闭所有滑动
+	resetAllSwipe();
 	uni.showModal({
 		title: '确认删除',
 		content: '确定要删除这份试卷吗？',
 		confirmText: '删除',
 		cancelText: '取消',
 		confirmColor: '#ff4d4f',
-		success: (res) => {
+		success: async (res) => {
 			if (res.confirm) {
-				// 模拟删除操作
-				const index = questions.value.findIndex(item => item.id === questionId);
-				if (index !== -1) {
-					questions.value.splice(index, 1);
+				try {
+					// 调用删除接口
+					const response = await request({
+						url: '/examPaper/delete',
+						method: 'POST',
+						data: { id: questionId }
+					});
+					
+					if (response.code === 200) {
+						uni.showToast({
+							title: response.msg || '删除成功',
+							icon: 'success'
+						});
+						// 重新获取试卷列表，刷新页面
+						await fetchExamPapers();
+					} else {
+						uni.showToast({
+							title: response.msg || '删除失败',
+							icon: 'none'
+						});
+					}
+				} catch (error) {
+					console.error('删除试卷失败:', error);
 					uni.showToast({
-						title: '删除成功',
-						icon: 'success'
+						title: '删除失败，请稍后重试',
+						icon: 'none'
 					});
 				}
+				// 删除后重置滑动状态
+				resetAllSwipe();
 			}
 		}
 	});
 };
 
+// 重置所有滑动状态
+const resetAllSwipe = () => {
+	Object.keys(swipeOffset.value).forEach(key => {
+		swipeOffset.value[key] = 0;
+	});
+	Object.keys(isSwipping.value).forEach(key => {
+		isSwipping.value[key] = false;
+	});
+};
+
+// 触摸开始事件
+const handleTouchStart = (event, index) => {
+	startX.value[index] = event.touches[0].clientX;
+	isSwipping.value[index] = true;
+	// 关闭其他项的滑动
+	Object.keys(swipeOffset.value).forEach(key => {
+		if (key != index) {
+			swipeOffset.value[key] = 0;
+		}
+	});
+};
+
+// 触摸移动事件
+const handleTouchMove = (event, index) => {
+	if (!isSwipping.value[index]) return;
+	
+	const moveX = event.touches[0].clientX;
+	const offsetX = moveX - startX.value[index];
+	
+	// 限制滑动范围：只能向左滑动，最大滑动距离为操作按钮宽度
+	let newOffset = Math.min(0, Math.max(offsetX, -ACTION_WIDTH));
+	
+	// 更新滑动偏移量
+	swipeOffset.value[index] = newOffset;
+};
+
+// 触摸结束事件
+const handleTouchEnd = (event, index) => {
+	isSwipping.value[index] = false;
+	
+	// 根据滑动距离判断是否完全展开或关闭
+	const offset = swipeOffset.value[index] || 0;
+	const threshold = -ACTION_WIDTH / 2;
+	
+	if (offset < threshold) {
+		// 完全展开
+		swipeOffset.value[index] = -ACTION_WIDTH;
+	} else {
+		// 关闭
+		swipeOffset.value[index] = 0;
+	}
+};
+
+// 获取试卷列表
+const fetchExamPapers = async () => {
+	try {
+		const response = await request({
+			url: '/examPaper/queryList',
+			method: 'POST',
+			data: {}
+		});
+		
+		if (response.code === 200) {
+			// 将接口返回的数据转换为组件所需的格式
+			questions.value = response.data.list.map(item => ({
+				id: item.id,
+				name: item.protagonistInfoDTO.protagonist, // 主角姓名
+				avatar: item.protagonistInfoDTO.picUrl, // 主角头像
+				paperName: item.name, // 试卷名称
+				createTime: item.createTime // 创建时间
+			}));
+			// 初始化滑动状态
+			resetAllSwipe();
+		} else {
+			uni.showToast({
+				title: '获取试卷列表失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('获取试卷列表失败:', error);
+		uni.showToast({
+			title: '获取试卷列表失败',
+			icon: 'none'
+		});
+	}
+};
+
+// 下拉刷新事件处理
+const onRefresh = async () => {
+	// 开始刷新，显示loading
+	refresherTriggered.value = true;
+	// 调用API获取最新试卷列表
+	await fetchExamPapers();
+	// 刷新完成，隐藏loading
+	refresherTriggered.value = false;
+};
+
+// 下拉过程事件处理（可选）
+const onRefresherPulling = () => {
+	// 可以在这里添加下拉过程中的动画或状态更新
+};
+
 onMounted(() => {
-	// 这里可以添加实际的数据获取逻辑
-	console.log('Question list page mounted');
+	// 调用API获取试卷列表
+	fetchExamPapers();
 });
 </script>
 
@@ -167,9 +329,11 @@ onMounted(() => {
 	border-bottom: 2rpx solid #f0f0f0;
 	transition: all 0.3s ease;
 	border-radius: 12rpx;
-	margin: 0 12rpx 16rpx;
+	margin: 0;
 	background-color: #fff;
 	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+	height: 100%;
+	box-sizing: border-box;
 }
 
 .table-row:hover {
@@ -231,18 +395,11 @@ onMounted(() => {
 
 .paper-name {
 	font-size: 28rpx;
-	color: #1890ff;
-	cursor: pointer;
-	text-decoration: underline;
-	transition: color 0.3s ease;
+	color: #333;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	max-width: 120rpx;
-}
-
-.paper-name:hover {
-	color: #40a9ff;
 }
 
 .create-time {
@@ -250,174 +407,159 @@ onMounted(() => {
 	color: #666;
 }
 
-/* 操作菜单样式 */
-.action-menu {
+/* 左滑操作样式 */
+.swipe-cell {
 	position: relative;
-	z-index: 9999;
-}
-
-.action-menu-button {
-	padding: 8rpx 16rpx;
-	border: none;
-	background: transparent;
-	font-size: 32rpx;
-	color: #666;
-	transition: all 0.3s ease;
-	border-radius: 8rpx;
-}
-
-.action-menu-button:hover {
-	background-color: #f0f0f0;
-	color: #333;
-}
-
-.action-menu-dropdown {
-	position: absolute;
-	right: 0;
-	background-color: #fff;
+	margin: 0 12rpx 16rpx;
 	border-radius: 12rpx;
-	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.15);
-	min-width: 200rpx;
 	overflow: hidden;
-	z-index: 9999;
-	transform: translateX(-20rpx);
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+	transform: translateZ(0);
+	backface-visibility: hidden;
+	height: 120rpx;
 }
 
-.action-menu-dropdown.dropdown-down {
-	top: 100%;
-	margin-top: 8rpx;
-	animation: dropdownSlideDown 0.2s ease-out;
-}
-
-.action-menu-dropdown.dropdown-up {
-	bottom: 100%;
-	margin-bottom: 8rpx;
-	box-shadow: 0 -8rpx 24rpx rgba(0, 0, 0, 0.15);
-	animation: dropdownSlideUp 0.2s ease-out;
-}
-
-@keyframes dropdownSlideUp {
-	from {
-		opacity: 0;
-		transform: translateY(8rpx) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-}
-
-@keyframes dropdownSlideDown {
-	from {
-		opacity: 0;
-		transform: translateY(-8rpx) scale(0.95);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0) scale(1);
-	}
-}
-
-.menu-item {
+/* 左滑操作按钮容器 */
+.swipe-actions {
+	position: absolute;
+	top: 10rpx;
+	right: 0;
+	height: calc(100% - 20rpx);
 	display: flex;
+	flex-direction: row;
+	z-index: 1;
+}
+
+/* 左滑操作按钮 */
+.swipe-action {
+	display: flex;
+	flex-direction: column;
 	align-items: center;
-	padding: 16rpx 24rpx;
+	justify-content: center;
+	padding: 0 10rpx;
 	border: none;
-	background: transparent;
-	width: 100%;
-	text-align: left;
-	transition: all 0.2s ease;
+	color: #fff;
+	font-size: 22rpx;
+	transition: all 0.3s ease;
+	width: 130rpx;
+	height: 100%;
+	border-radius: 12rpx;
 }
 
-.menu-item:hover {
-	background-color: #f8f9fa;
+.swipe-action:active {
+	opacity: 0.8;
+	transform: scale(0.95);
 }
 
-.menu-item:active {
-	background-color: #e9ecef;
+/* 分享按钮样式 */
+.share-action {
+	background-color: #52c41a;
 }
 
-.menu-icon {
-	font-size: 28rpx;
-	margin-right: 16rpx;
+/* 删除按钮样式 */
+.delete-action {
+	background-color: #ff4d4f;
 }
 
-.menu-text {
-	font-size: 24rpx;
-	color: #333;
+/* 操作按钮图标 */
+.action-icon {
+	font-size: 32rpx;
+	margin-bottom: 8rpx;
+}
+
+/* 操作按钮文本 */
+.action-text {
+	font-size: 20rpx;
 	font-weight: 500;
 }
 
-.share-item .menu-text {
-	color: #52c41a;
+/* 主内容区域 */
+.table-row {
+	display: flex;
+	align-items: center;
+	padding: 28rpx 24rpx;
+	border-bottom: 2rpx solid #f0f0f0;
+	border-radius: 12rpx;
+	background-color: #fff;
+	transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	position: relative;
+	z-index: 2;
+	cursor: pointer;
+	height: 100%;
+	box-sizing: border-box;
+	margin: 0;
 }
 
-.detail-item .menu-text {
-	color: #1890ff;
-}
-
-.delete-item .menu-text {
-	color: #ff4d4f;
-}
-
-.empty-state {
-	padding: 100rpx 0;
-	text-align: center;
-}
-
-.empty-text {
-	font-size: 28rpx;
-	color: #999;
-}
-
-/* 响应式调整 */
-@media (max-width: 750rpx) {
-	.question-list-container {
-		padding: 16rpx;
+	/* 隐藏操作列 */
+	.action-cell {
+		display: none;
 	}
 
-	.table-header,
-	.table-row {
-		padding: 16rpx;
+	.empty-state {
+		padding: 100rpx 0;
+		text-align: center;
 	}
 
-	.name {
-		font-size: 24rpx;
-	}
-
-	.paper-name {
-		font-size: 24rpx;
-	}
-
-	.create-time {
-		font-size: 20rpx;
-	}
-
-	.avatar {
-		width: 50rpx;
-		height: 50rpx;
-	}
-
-	.action-menu-button {
-		padding: 6rpx 12rpx;
+	.empty-text {
 		font-size: 28rpx;
+		color: #999;
 	}
 
-	.action-menu-dropdown {
-		min-width: 180rpx;
-	}
+	/* 响应式调整 */
+	@media (max-width: 750rpx) {
+		.question-list-container {
+			padding: 16rpx;
+		}
 
-	.menu-item {
-		padding: 12rpx 20rpx;
-	}
+		.table-header,
+		.table-row {
+			padding: 16rpx;
+		}
 
-	.menu-icon {
-		font-size: 24rpx;
-		margin-right: 12rpx;
-	}
+		.name {
+			font-size: 24rpx;
+		}
 
-	.menu-text {
-		font-size: 22rpx;
+		.paper-name {
+			font-size: 24rpx;
+		}
+
+		.create-time {
+			font-size: 20rpx;
+		}
+
+		.avatar {
+			width: 50rpx;
+			height: 50rpx;
+		}
+
+		/* 左滑操作按钮响应式调整 */
+			.swipe-action {
+				width: 120rpx;
+				padding: 0 8rpx;
+			}
+
+			.action-icon {
+				font-size: 26rpx;
+				margin-bottom: 4rpx;
+			}
+
+			.action-text {
+				font-size: 16rpx;
+			}
+			
+			/* 左滑操作按钮容器响应式调整 */
+			.swipe-actions {
+				top: 8rpx;
+				height: calc(100% - 16rpx);
+			}
+			
+			/* 响应式调整swipe-cell高度 */
+			.swipe-cell {
+				height: 110rpx;
+			}
+			
+			/* 响应式调整ACTION_WIDTH */
+			/* 注意：JS中的ACTION_WIDTH不会自动更新，这里仅用于CSS样式调整 */
 	}
-}
 </style>

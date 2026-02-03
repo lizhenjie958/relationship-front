@@ -1,5 +1,5 @@
 <template>
-	<view class="answer-list-container">
+	<view class="answer-list-container" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
 		
 		<!-- Tab切换 -->
 		<view class="tab-container">
@@ -72,44 +72,56 @@ const tabs = [
 const activeTab = ref('ongoing');
 
 // 模拟答题记录数据
-const answers = ref([
-	{
-		id: 1,
-		status: 'ongoing',
-		creator: '张三',
-		protagonist: '李四',
-		answerTime: '2026-01-26 10:00',
-		expireTime: '2026-01-27 10:00',
-		score: '0'
-	},
-	{
-		id: 2,
-		status: 'completed',
-		creator: '赵六',
-		protagonist: '钱七',
-		answerTime: '2026-01-25 14:30',
-		completeTime: '2026-01-25 15:00',
-		score: '85'
-	},
-	{
-		id: 3,
-		status: 'expired',
-		creator: '周九',
-		protagonist: '吴十',
-		answerTime: '2026-01-24 09:00',
-		expireTime: '2026-01-25 09:00',
-		score: '0'
-	},
-	{
-		id: 4,
-		status: 'completed',
-		creator: '王二',
-		protagonist: '张三',
-		answerTime: '2026-01-23 16:00',
-		completeTime: '2026-01-23 16:30',
-		score: '90'
-	}
-]);
+const answers = ref([]);
+
+// 下拉刷新状态
+const refresherTriggered = ref(false);
+
+// 模拟API调用，获取答题记录
+const fetchAnswers = async () => {
+	// 模拟网络请求延迟
+	await new Promise(resolve => setTimeout(resolve, 500));
+	
+	// 模拟返回数据
+	answers.value = [
+		{
+			id: 1,
+			status: 'ongoing',
+			creator: '张三',
+			protagonist: '李四',
+			answerTime: '2026-01-26 10:00',
+			expireTime: '2026-01-27 10:00',
+			score: '0'
+		},
+		{
+			id: 2,
+			status: 'completed',
+			creator: '赵六',
+			protagonist: '钱七',
+			answerTime: '2026-01-25 14:30',
+			completeTime: '2026-01-25 15:00',
+			score: '85'
+		},
+		{
+			id: 3,
+			status: 'expired',
+			creator: '周九',
+			protagonist: '吴十',
+			answerTime: '2026-01-24 09:00',
+			expireTime: '2026-01-25 09:00',
+			score: '0'
+		},
+		{
+			id: 4,
+			status: 'completed',
+			creator: '王二',
+			protagonist: '张三',
+			answerTime: '2026-01-23 16:00',
+			completeTime: '2026-01-23 16:30',
+			score: '90'
+		}
+	];
+};
 
 // 根据当前Tab过滤数据
 const filteredAnswers = computed(() => {
@@ -121,7 +133,20 @@ const switchTab = (tabValue) => {
 	activeTab.value = tabValue;
 };
 
+// 下拉刷新事件处理
+const onRefresh = async () => {
+	// 开始刷新，显示loading
+	refresherTriggered.value = true;
+	// 重新获取答题记录
+	await fetchAnswers();
+	// 刷新完成，隐藏loading
+	refresherTriggered.value = false;
+};
 
+// 下拉过程事件处理（可选）
+const onRefresherPulling = () => {
+	// 可以在这里添加下拉过程中的动画或状态更新
+};
 
 // 跳转到试卷列表
 const goToQuestionList = () => {
@@ -137,8 +162,9 @@ const goToAnswerRecord = (recordId) => {
 	});
 };
 
-onMounted(() => {
-	console.log('Answer list page mounted');
+onMounted(async () => {
+	// 页面挂载时获取数据
+	await fetchAnswers();
 });
 </script>
 

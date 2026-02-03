@@ -22,43 +22,48 @@
 					<view class="question-card">
 						<!-- 题目序号 -->
 						<view class="question-number">
-							<text>第 {{ index + 1 }} 题</text>
+							<text class="question-number-text">第 {{ index + 1 }} 题</text>
 						</view>
 						
 						<!-- 问题内容 -->
 						<view class="question-content">
-							<text class="question-text">{{ question.questionText }}</text>
+							<!-- 题目图片 -->
+						<view v-if="question.picUrl" class="question-image">
+							<image class="question-image-image" :src="question.picUrl" mode="aspectFit"></image>
+						</view>
+							<!-- 问题文本 -->
+							<text class="question-text">
+								{{ question.templateKey === 'cg3j4e' ? '图片中的人物是主角的()' : question.questionText || '请选择正确答案' }}
+							</text>
 						</view>
 						
 						<!-- 选项列表 -->
 						<view class="options-list">
 							<view 
-								v-for="(option, optionIndex) in question.options" 
-								:key="optionIndex"
+								v-for="option in question.optionList" 
+								:key="option.key"
 								class="option-item"
 								:class="{
-									'selected': isUserSelected(index, optionIndex) || selectedOptions[index] === getOptionLabel(optionIndex),
+									'selected': isUserSelected(index, option.key) || selectedOptions[index] === option.key,
 									'clickable': canAnswer()
 								}"
-								@click="selectOption(index, optionIndex)"
+								@click="selectOption(index, option.key)"
 							>
-								<view class="option-image">
-									<view class="image-placeholder" :style="{ backgroundColor: getOptionColor(optionIndex) }"></view>
-								</view>
-								<view class="option-label">{{ getOptionLabel(optionIndex) }}</view>
-								<view v-if="isUserSelected(index, optionIndex)" class="user-selected-indicator">
+								<view class="option-text">{{ option.value }}</view>
+								<view class="option-label">{{ option.key }}</view>
+								<view v-if="isUserSelected(index, option.key)" class="user-selected-indicator">
 									<text>✓</text>
 								</view>
 							</view>
 						</view>
 						
 						<!-- 答案区域 -->
-						<view v-if="shouldShowAnswer()" class="answer-section">
+						<view class="answer-section">
 							<view class="answer-header">
 								<text class="answer-title">答案</text>
 							</view>
 							<view class="answer-content">
-								<text class="answer-text">{{ question.answer }}</text>
+								<text class="answer-text">{{ question.correctOptionList?.join('、') || '暂无答案' }}</text>
 							</view>
 						</view>
 						
@@ -115,6 +120,11 @@
 		showAnswer: {
 			type: Boolean,
 			default: false
+		},
+		// 题目数据，从父组件传入
+		questions: {
+			type: Array,
+			default: () => []
 		}
 	});
 
@@ -127,57 +137,18 @@
 	// 轮播相关
 	const currentQuestionIndex = ref(0);
 	
-	// 模拟题目数据
-	const questions = ref([
-		{
-			id: 1,
-			questionText: '从以下图片中选出主角的哥哥',
-			options: [
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Brother' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Father' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Friend' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Uncle' }
-			],
-			answer: 'A、B'
-		},
-		{
-			id: 2,
-			questionText: '从以下图片中选出主角的姐姐',
-			options: [
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Sister' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Mother' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Cousin' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Aunt' }
-			],
-			answer: 'C'
-		},
-		{
-			id: 3,
-			questionText: '从以下图片中选出主角的祖父',
-			options: [
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Grandfather' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Nephew' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Son' },
-				{ imageUrl: 'https://via.placeholder.com/200x300?text=Grandson' }
-			],
-			answer: 'A、D'
-		}
-	]);
-	
 	// 轮播切换事件处理
 	const handleSwiperChange = (e) => {
 		currentQuestionIndex.value = e.detail.current;
 	};
 
 	// 选择选项
-	const selectOption = (questionIndex, optionIndex) => {
+	const selectOption = (questionIndex, optionKey) => {
 		if (props.answerStatus === 'ongoing') {
-			const optionLabel = getOptionLabel(optionIndex);
-			selectedOptions.value[questionIndex] = optionLabel;
+			selectedOptions.value[questionIndex] = optionKey;
 			emit('selectOption', {
 				questionIndex,
-				optionIndex,
-				optionLabel
+				optionKey
 			});
 		}
 	};
@@ -188,9 +159,8 @@
 	};
 
 	// 检查是否是用户选择的选项
-	const isUserSelected = (questionIndex, optionIndex) => {
-		const optionLabel = getOptionLabel(optionIndex);
-		return props.userAnswers[questionIndex] === optionLabel;
+	const isUserSelected = (questionIndex, optionKey) => {
+		return props.userAnswers[questionIndex] === optionKey;
 	};
 
 	// 检查是否应该显示答案
@@ -203,41 +173,10 @@
 		return props.answerStatus === 'ongoing';
 	};
 	
-	// 获取选项标签（A、B、C、D）
-	const getOptionLabel = (index) => {
-		return String.fromCharCode(65 + index);
-	};
-	
-	// 获取选项颜色
-	const getOptionColor = (index) => {
-		const colors = ['#1890ff', '#52c41a', '#faad14', '#f5222d'];
-		return colors[index % colors.length];
-	};
-	
 	// 页面挂载
 	onMounted(() => {
 		// 这里可以根据传入的试卷ID获取实际数据
-		console.log('Question Info component mounted with:', {
-			paperId: props.paperId,
-			recordId: props.recordId,
-			usageSource: props.usageSource
-		});
-		// 模拟获取数据
 	});
-	
-	// 模拟获取题目数据
-	const fetchQuestionData = (paperId) => {
-		// 实际项目中，这里会调用API获取数据
-		// 模拟数据加载
-		uni.showLoading({
-			title: '加载中...'
-		});
-		
-		setTimeout(() => {
-			uni.hideLoading();
-			// 模拟数据赋值
-		}, 500);
-	};
 </script>
 
 <style lang="scss" scoped>
@@ -273,32 +212,36 @@
 	
 	/* 可左右滑动的题目容器 */
 	.questions-container {
-			width: 100%;
-			overflow: hidden;
-			position: relative;
-			margin-bottom: 32rpx;
-			min-height: 1100rpx;
-		}
-	
+		width: 100%;
+		overflow: visible;
+		position: relative;
+		margin-bottom: 32rpx;
+		min-height: 100vh;
+	}
+
 	.questions-wrapper {
 		display: flex;
 		transition: transform 0.3s ease;
 	}
-	
+
 	.question-slide {
 		width: 100%;
 		flex-shrink: 0;
 		padding: 0 20rpx;
+		overflow-y: auto;
 	}
-	
+
 	.question-card {
-			background-color: #fff;
-			border-radius: 12rpx;
-			padding: 32rpx;
-			box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
-			transition: all 0.3s ease;
-			margin: 0 20rpx;
-		}
+		background-color: #fff;
+		border-radius: 12rpx;
+		padding: 32rpx;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+		transition: all 0.3s ease;
+		margin: 0 20rpx;
+		min-height: auto;
+		max-height: none;
+		overflow-y: visible;
+	}
 	
 	.question-card:hover {
 		box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.12);
@@ -311,7 +254,7 @@
 		border-bottom: 2rpx solid #f1f3f5;
 	}
 	
-	.question-number text {
+	.question-number-text {
 		font-size: 28rpx;
 		font-weight: 600;
 		color: #2c3e50;
@@ -322,92 +265,81 @@
 		margin-bottom: 32rpx;
 	}
 	
+	/* 题目图片 */
+	.question-image {
+		width: 100%;
+		margin: 20rpx 0;
+		border-radius: 8rpx;
+		overflow: hidden;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	}
+	
+	.question-image-image {
+		width: 100%;
+		height: 400rpx;
+		object-fit: cover;
+	}
+	
 	.question-text {
 		font-size: 30rpx;
 		color: #333;
 		line-height: 1.5;
 		margin-bottom: 24rpx;
 		display: block;
+		text-align: center;
 	}
 	
 	/* 选项列表 */
 	.options-list {
-			margin-bottom: 32rpx;
-			display: grid;
-			grid-template-columns: repeat(2, 1fr);
-			gap: 20rpx;
-		}
-		
-		.option-item {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			padding: 16rpx;
-			border-radius: 12rpx;
-			background-color: #e8f4fd;
-			transition: all 0.3s ease;
-			position: relative;
-			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
-			min-height: 300rpx;
-		}
-		
-		.option-item:hover {
-			background-color: #e6f7ff;
-			transform: translateY(-4rpx);
-			box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
-		}
-		
-		.option-image {
-			width: 100%;
-			height: 200rpx;
-			border-radius: 8rpx;
-			overflow: hidden;
-			background-color: #f0f2f5;
-			position: relative;
-		}
-		
-		.option-image .image {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			transition: transform 0.3s ease;
-		}
-		
-		.option-item:hover .option-image .image {
-			transform: scale(1.05);
-		}
-		
-		.image-placeholder {
-			width: 100%;
-			height: 100%;
-			border-radius: 8rpx;
-			transition: transform 0.3s ease;
-		}
-		
-		.option-item:hover .image-placeholder {
-			transform: scale(1.05);
-		}
-		
-		.option-label {
-			width: 48rpx;
-			height: 48rpx;
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			background-color: #1890ff;
-			border-radius: 50%;
-			font-size: 24rpx;
-			font-weight: 600;
-			color: #fff;
-			margin-top: 16rpx;
-			box-shadow: 0 2rpx 4rpx rgba(24, 144, 255, 0.3);
-			transition: all 0.3s ease;
-		}
-		
-		.option-item:hover .option-label {
-			background-color: #40a9ff;
-			transform: scale(1.05);
-		}
+		margin-bottom: 32rpx;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 20rpx;
+	}
+	
+	.option-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 24rpx 16rpx;
+		border-radius: 12rpx;
+		background-color: #e8f4fd;
+		transition: all 0.3s ease;
+		position: relative;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+		min-height: 180rpx;
+		justify-content: center;
+	}
+	
+	.option-item:hover {
+		background-color: #e6f7ff;
+		transform: translateY(-4rpx);
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
+	}
+	
+	/* 选项文本 */
+	.option-text {
+		font-size: 28rpx;
+		color: #333;
+		margin-bottom: 16rpx;
+		text-align: center;
+		font-weight: 500;
+	}
+	
+	.option-label {
+		width: 48rpx;
+		height: 48rpx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #1890ff;
+		border-radius: 50%;
+		font-size: 24rpx;
+		font-weight: 600;
+		color: #fff;
+		box-shadow: 0 2rpx 4rpx rgba(24, 144, 255, 0.3);
+		transition: all 0.3s ease;
+	}
 
 		/* 选中状态 */
 		.option-item.selected {
@@ -472,21 +404,26 @@
 		background-color: #f6ffed;
 		border-radius: 8rpx;
 		border-left: 4rpx solid #52c41a;
+		position: relative;
+		z-index: 10;
+		display: block;
+		visibility: visible;
+		opacity: 1;
 	}
-	
+
 	.answer-header {
 		margin-bottom: 16rpx;
 	}
-	
+
 	.answer-title {
 		font-size: 28rpx;
 		font-weight: 600;
 		color: #52c41a;
 	}
-	
+
 	.answer-content {
 	}
-	
+
 	.answer-text {
 		font-size: 26rpx;
 		color: #333;
