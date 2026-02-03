@@ -32,7 +32,8 @@
 <script setup>
 	import { ref, onMounted } from 'vue';
 	import QuestionInfo from '@/components/QuestionInfo.vue';
-	import { request } from '@/utils/request.js';
+	import { getExamPaperDetail } from '@/api/examPaperApi.js';
+	import { addShareRecord } from '@/api/shareApi.js';
 	
 	// 接收外部传入的试卷ID参数
 	const props = defineProps({
@@ -63,12 +64,8 @@
 		}
 		
 		try {
-			const response = await request({
-				url: '/examPaper/queryDetail',
-				method: 'POST',
-				data: {
-					id: paperId.value
-				}
+			const response = await getExamPaperDetail({
+				id: paperId.value
 			});
 			
 			if (response.code === 200) {
@@ -95,10 +92,76 @@
 		}
 	};
 	
+	// 生成随机UUID（去除-）
+	const generateUUID = () => {
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			const r = Math.random() * 16 | 0;
+			const v = c === 'x' ? r : (r & 0x3 | 0x8);
+			return v.toString(16);
+		}).replace(/-/g, '');
+	};
+
+	// 分享成功处理
+	const handleShareSuccess = async (shareCode) => {	
+		try {
+			await addShareRecord({
+				sourceType: 1,
+				sourceId: paperId.value,
+				shareCode: shareCode
+			});
+		} catch (error) {
+			console.error('调用分享记录接口失败:', error);
+		}
+	};
+
 	// 页面挂载
-	onMounted(() => {
+	onMounted(async () => {
 		// 根据传入的试卷ID获取实际数据
-		fetchPaperDetail();
+		await fetchPaperDetail();
+	});
+
+	// 微信小程序分享给好友
+	const onShareAppMessage = () => {
+		// 生成分享码
+		debugger;
+		const shareCode = generateUUID();
+		
+		// 分享成功处理
+		const handleAppShareSuccess = () => {
+			debugger;
+			handleShareSuccess(shareCode);
+		};
+		
+		return {
+			title: paperName.value || '我分享了一份试卷',
+			desc: `快来看看这份关于${protagonistName.value}的试卷吧！`,
+			path: `/pages/index/index?shareCode=${shareCode}`,
+			success: handleAppShareSuccess
+		};
+	};
+
+	// 微信小程序分享到朋友圈
+	const onShareTimeline = () => {
+		// 生成分享码
+		const shareCode = generateUUID();
+		
+		// 分享成功处理
+		const handleTimelineShareSuccess = () => {
+			handleShareSuccess(shareCode);
+		};
+		
+		return {
+			title: paperName.value || '我分享了一份试卷',
+			path: `/pages/index/index?shareCode=${shareCode}`,
+			success: handleTimelineShareSuccess
+		};
+	};
+	
+
+	// 导出分享函数，供微信小程序使用
+	defineExpose({
+		onShareAppMessage,
+		onShareTimeline
 	});
 </script>
 

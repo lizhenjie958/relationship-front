@@ -14,3 +14,8 @@ export function completeShare(data = {}){
 export function queryTargetPath(data = {}){
 	return request({url:"/shareRecord/queryTargetPath",data, method: "POST"})
 }
+
+// 添加分享记录
+export function addShareRecord(data = {}){
+	return request({url:"/shareRecord/addRecord",data, method: "POST"})
+}

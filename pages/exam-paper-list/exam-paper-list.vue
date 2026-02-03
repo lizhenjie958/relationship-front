@@ -14,16 +14,12 @@
 			<view class="table-body">
 				<view v-for="(item, index) in questions" :key="item.id" class="swipe-cell">
 					<!-- 左滑操作按钮 -->
-			<view class="swipe-actions">
-				<button class="swipe-action share-action" @click="shareQuestion(item.id)">
-					<text class="action-icon">📤</text>
-					<text class="action-text">分享</text>
-				</button>
-				<button class="swipe-action delete-action" @click="deleteQuestion(item.id)">
-					<text class="action-icon">🗑️</text>
-					<text class="action-text">删除</text>
-				</button>
-			</view>
+					<view class="swipe-actions">
+						<button class="swipe-action delete-action" @click="deleteQuestion(item.id)">
+							<text class="action-icon">🗑️</text>
+							<text class="action-text">删除</text>
+						</button>
+					</view>
 					<!-- 主内容区域 -->
 					<view 
 						class="table-row"
@@ -62,7 +58,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/request.js';
-import { readyShare, completeShare } from '@/api/shareApi.js';
 
 // 试卷数据
 const questions = ref([]);
@@ -71,7 +66,7 @@ const questions = ref([]);
 const swipeOffset = ref({}); // 存储每个项目的滑动偏移量
 const startX = ref({}); // 存储每个项目的起始触摸X坐标
 const isSwipping = ref({}); // 标记每个项目是否正在滑动
-const ACTION_WIDTH = 260; // 操作按钮总宽度（两个按钮各130rpx）
+const ACTION_WIDTH = 130; // 操作按钮总宽度（一个删除按钮130rpx）
 
 // 下拉刷新状态
 const refresherTriggered = ref(false);
@@ -83,63 +78,7 @@ const goToRecord = (questionId) => {
 	});
 };
 
-// 分享试卷
-const shareQuestion = async (questionId) => {
-	// 关闭所有滑动
-	resetAllSwipe();
-	
-	try {
-		// 调用准备分享接口
-		const response = await readyShare({
-			sourceType: 1,
-			sourceId: questionId
-		});
-		
-		if (response.code === 200 && response.data) {
-			// 准备分享成功，吊起微信分享
-			uni.share({
-				provider: 'weixin',
-				scene: 'WXSceneSession', // 分享到微信好友
-				type: 0, // 文本类型
-				title: '我分享了一份试卷',
-				desc: '快来看看这份试卷吧！',
-				path: `/pages/index/index?shareCode=${response.data}`,
-				success: async () => {
-					// 分享成功，调用分享完成接口
-					try {
-						await completeShare({
-							shareId: response.data
-						});
-					} catch (error) {
-						console.error('调用分享完成接口失败:', error);
-					}
-					uni.showToast({
-						title: '分享成功',
-						icon: 'success'
-					});
-				},
-				fail: (error) => {
-					console.error('分享失败:', error);
-					uni.showToast({
-						title: '分享失败',
-						icon: 'none'
-					});
-				}
-			});
-		} else {
-			uni.showToast({
-				title: response.msg || '分享准备失败',
-				icon: 'none'
-			});
-		}
-	} catch (error) {
-		console.error('调用准备分享接口失败:', error);
-		uni.showToast({
-			title: '分享准备失败，请稍后重试',
-			icon: 'none'
-		});
-	}
-};
+
 
 // 删除试卷
 const deleteQuestion = (questionId) => {
