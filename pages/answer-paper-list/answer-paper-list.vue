@@ -23,17 +23,21 @@
 					<view class="table-cell answer-time-cell">答题时间</view>
 					<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
 					<view v-if="activeTab === 'completed'" class="table-cell score-cell">得分</view>
-					<view class="table-cell action-cell">{{ activeTab === 'completed' ? '操作' : '查看' }}</view>
 				</view>
 
 				<!-- 表格内容 -->
 				<view class="table-body">
-					<view v-for="item in filteredAnswers" :key="item.id" class="table-row">
+					<view 
+						v-for="item in filteredAnswers" 
+						:key="item.id" 
+						class="table-row"
+						@click="goToAnswerRecord(item.id)"
+					>
 						<view class="table-cell creator-cell">
 							<text class="creator">{{ item.creator }}</text>
 						</view>
 						<view class="table-cell protagonist-cell">
-							<text class="protagonist" @click="goToQuestionList">{{ item.protagonist }}</text>
+							<text class="protagonist">{{ item.protagonist }}</text>
 						</view>
 						<view class="table-cell answer-time-cell">
 						<text class="answer-time">{{ item.answerTime }}</text>
@@ -43,9 +47,6 @@
 					</view>
 					<view v-if="activeTab === 'completed'" class="table-cell score-cell">
 						<text class="score">{{ item.score }}</text>
-					</view>
-					<view class="table-cell action-cell">
-						<text class="action-arrow" @click="goToAnswerRecord(item.id)">→</text>
 					</view>
 					</view>
 				</view>
@@ -60,6 +61,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { request } from '@/utils/request.js';
 
 // Tab配置
 const tabs = [
@@ -77,60 +79,68 @@ const answers = ref([]);
 // 下拉刷新状态
 const refresherTriggered = ref(false);
 
-// 模拟API调用，获取答题记录
+// 调用真实API获取答题记录
 const fetchAnswers = async () => {
-	// 模拟网络请求延迟
-	await new Promise(resolve => setTimeout(resolve, 500));
-	
-	// 模拟返回数据
-	answers.value = [
-		{
-			id: 1,
-			status: 'ongoing',
-			creator: '张三',
-			protagonist: '李四',
-			answerTime: '2026-01-26 10:00',
-			expireTime: '2026-01-27 10:00',
-			score: '0'
-		},
-		{
-			id: 2,
-			status: 'completed',
-			creator: '赵六',
-			protagonist: '钱七',
-			answerTime: '2026-01-25 14:30',
-			completeTime: '2026-01-25 15:00',
-			score: '85'
-		},
-		{
-			id: 3,
-			status: 'expired',
-			creator: '周九',
-			protagonist: '吴十',
-			answerTime: '2026-01-24 09:00',
-			expireTime: '2026-01-25 09:00',
-			score: '0'
-		},
-		{
-			id: 4,
-			status: 'completed',
-			creator: '王二',
-			protagonist: '张三',
-			answerTime: '2026-01-23 16:00',
-			completeTime: '2026-01-23 16:30',
-			score: '90'
+	try {
+		// 根据当前tab确定answerStatus参数
+		let answerStatusMap = {
+			'ongoing': 1, // ANSWERING
+			'completed': 2, // COMPLETED
+			'expired': 4 // TIMED_OUT
+		};
+		
+		// 调用API
+		const response = await request({
+			url: '/answerPaper/queryList',
+			method: 'POST',
+			data: {
+				answerStatus: answerStatusMap[activeTab.value]
+			}
+		});
+		
+		if (response.code === 200) {
+			// 处理返回数据，映射为组件需要的格式
+			const apiData = response.data.list || [];
+			answers.value = apiData.map(item => ({
+					id: item.id,
+					status: activeTab.value, // 当前tab对应的状态
+					creator: '系统管理员', // 接口未返回，暂时使用默认值
+					protagonist: item.protagonistInfoDTO?.protagonist || '',
+					answerTime: item.createTime ? new Date(item.createTime).toLocaleString() : '',
+					expireTime: item.timeoutTime ? new Date(item.timeoutTime).toLocaleString() : '',
+					completeTime: item.completeTime ? new Date(item.completeTime).toLocaleString() : '',
+					score: item.score || 0, // 使用接口返回的真实score值
+					examPaperId: item.examPaperId,
+					examPaperName: item.examPaperName,
+					protagonistInfo: item.protagonistInfoDTO
+				}));
+		} else {
+			uni.showToast({
+				title: response.msg || '获取答题记录失败',
+				icon: 'none'
+			});
+			answers.value = [];
 		}
-	];
+	} catch (error) {
+		console.error('获取答题记录失败:', error);
+		uni.showToast({
+			title: '获取答题记录失败，请稍后重试',
+			icon: 'none'
+		});
+		answers.value = [];
+	}
 };
 
 // 根据当前Tab过滤数据
 const filteredAnswers = computed(() => {
-	return answers.value.filter(item => item.status === activeTab.value);
+	return answers.value;
 });
 
 // 切换Tab
-const switchTab = (tabValue) => {
+const switchTab = async (tabValue) => {
 	activeTab.value = tabValue;
+	// 切换Tab后重新获取对应状态的数据
+	await fetchAnswers();
 };
 
 // 下拉刷新事件处理
@@ -263,27 +273,19 @@ onMounted(async () => {
 }
 
 .score-cell {
-		flex: 1;
-		justify-content: center;
-	}
+				flex: 1;
+				justify-content: center;
+			}
 
-	.action-cell {
-		flex: 1;
-		justify-content: center;
-	}
+		/* 添加表格行点击效果 */
+		.table-row {
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
 
-	.action-arrow {
-		cursor: pointer;
-		font-size: 48rpx;
-		color: #1890ff;
-		font-weight: bold;
-		transition: all 0.3s ease;
-	}
-
-	.action-arrow:hover {
-		transform: translateX(4rpx);
-		color: #40a9ff;
-	}
+		.table-row:active {
+			background-color: #e6f7ff;
+		}
 
 .creator,
 .answer-time,
@@ -294,16 +296,15 @@ onMounted(async () => {
 }
 
 .protagonist {
-	font-size: 24rpx;
-	color: #1890ff;
-	cursor: pointer;
-	text-decoration: underline;
-	transition: color 0.3s ease;
-}
+		font-size: 24rpx;
+		color: #333;
+		cursor: pointer;
+		transition: color 0.3s ease;
+	}
 
-.protagonist:hover {
-	color: #40a9ff;
-}
+	.protagonist:hover {
+		color: #1890ff;
+	}
 
 /* 空状态样式 */
 .empty-state {
@@ -345,6 +346,7 @@ onMounted(async () => {
 	.complete-time,
 	.score {
 		font-size: 22rpx;
+		color: #333; /* 响应式设计中保持颜色一致 */
 	}
 }
 </style>

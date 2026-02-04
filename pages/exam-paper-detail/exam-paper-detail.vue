@@ -16,6 +16,13 @@
 					<text class="info-label">创建时间：</text>
 					<text class="info-value">{{ createTime }}</text>
 				</view>
+				
+				<!-- 认领按钮 -->
+				<view v-if="shareMode" class="claim-section">
+					<button class="claim-btn" @click="handleClaim">
+						<text class="claim-btn-text">认领试卷</text>
+					</button>
+				</view>
 			</view>
 		</view>
 		
@@ -23,7 +30,7 @@
 <QuestionInfo 
 	:paperId="paperId"
 	:usageSource="'exam-paper-detail'"
-	:showAnswer="true"
+	:showAnswer="!shareMode"
 	:questions="questions"
 />
 	</view>
@@ -31,9 +38,10 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-	import QuestionInfo from '@/components/QuestionInfo.vue';
-	import { getExamPaperDetail } from '@/api/examPaperApi.js';
-	import { addShareRecord } from '@/api/shareApi.js';
+import QuestionInfo from '@/components/QuestionInfo.vue';
+import { getExamPaperDetail } from '@/api/examPaperApi.js';
+import { addShareRecord } from '@/api/shareApi.js';
+import { request } from '@/utils/request.js';
 	
 	// 接收外部传入的试卷ID参数
 	const props = defineProps({
@@ -114,55 +122,95 @@
 		}
 	};
 
-	// 页面挂载
-	onMounted(async () => {
-		// 根据传入的试卷ID获取实际数据
-		await fetchPaperDetail();
-	});
+	// 分享模式状态
+const shareMode = ref(false);
+const shareCode = ref('');
 
-	// 微信小程序分享给好友
-	const onShareAppMessage = () => {
-		// 生成分享码
-		debugger;
+// 页面加载时获取URL参数
+onLoad((options) => {
+	// 检查是否是分享模式
+	if (options.share === '1') {
+		shareMode.value = true;
+	}
+	// 保存分享码
+	if (options.shareCode) {
+		shareCode.value = options.shareCode;
+	}
+});
+
+// 认领试卷
+const handleClaim = async () => {
+	try {
+		// 调用认领API
+		const response = await request({
+			url: '/examPaper/claim',
+			method: 'POST',
+			data: {
+				id: paperId.value
+			}
+		});
+		
+		if (response.code === 200) {
+			uni.showToast({
+				title: '认领成功',
+				icon: 'success'
+			});
+			
+			// 获取答卷ID
+			const answerId = response.data;
+			
+			// 延迟跳转到答卷详情页，使用返回的答卷ID
+		setTimeout(() => {
+			uni.navigateTo({
+				// 使用返回的答卷ID跳转到答卷详情页
+				url: `/pages/answer-paper-detail/answer-paper-detail?id=${answerId}`
+			});
+		}, 1500);
+		} else {
+			uni.showToast({
+				title: response.msg || '认领失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('认领失败:', error);
+		uni.showToast({
+			title: '认领失败，请稍后重试',
+			icon: 'none'
+		});
+	}
+};
+
+// 页面挂载
+onMounted(async () => {
+	// 根据传入的试卷ID获取实际数据
+	await fetchPaperDetail();
+});
+
+	// 微信小程序分享给好友 - 微信会自动识别此函数，无需导出
+    onShareAppMessage(() => {
+        // 生成分享码
 		const shareCode = generateUUID();
-		
-		// 分享成功处理
-		const handleAppShareSuccess = () => {
-			debugger;
-			handleShareSuccess(shareCode);
-		};
-		
+		handleShareSuccess(shareCode)
 		return {
 			title: paperName.value || '我分享了一份试卷',
 			desc: `快来看看这份关于${protagonistName.value}的试卷吧！`,
-			path: `/pages/index/index?shareCode=${shareCode}`,
-			success: handleAppShareSuccess
+			path: `/pages/index/index?shareCode=${shareCode}`
 		};
-	};
+    })
 
-	// 微信小程序分享到朋友圈
-	const onShareTimeline = () => {
+	// 微信小程序分享到朋友圈 - 微信会自动识别此函数，无需导出
+	onShareTimeline(()=>{
 		// 生成分享码
 		const shareCode = generateUUID();
-		
-		// 分享成功处理
-		const handleTimelineShareSuccess = () => {
-			handleShareSuccess(shareCode);
-		};
-		
+		handleShareSuccess(shareCode)
 		return {
 			title: paperName.value || '我分享了一份试卷',
-			path: `/pages/index/index?shareCode=${shareCode}`,
-			success: handleTimelineShareSuccess
+			path: `/pages/index/index?shareCode=${shareCode}`
 		};
-	};
-	
+	})
 
-	// 导出分享函数，供微信小程序使用
-	defineExpose({
-		onShareAppMessage,
-		onShareTimeline
-	});
+
 </script>
 
 <style lang="scss" scoped>
@@ -211,6 +259,41 @@
 		font-size: 28rpx;
 		color: #333;
 		font-weight: 500;
+	}
+	
+	/* 认领按钮样式 */
+	.claim-section {
+		margin-top: 24rpx;
+		padding-top: 24rpx;
+		border-top: 2rpx solid #f1f3f5;
+	}
+	
+	.claim-btn {
+		width: 100%;
+		height: 80rpx;
+		background-color: #1890ff;
+		color: #fff;
+		border: none;
+		border-radius: 12rpx;
+		font-size: 32rpx;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s ease;
+		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
+	}
+	
+	.claim-btn:active {
+		background-color: #40a9ff;
+		transform: scale(0.98);
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.2);
+	}
+	
+	.claim-btn-text {
+		color: #fff;
+		font-size: 32rpx;
+		font-weight: 600;
 	}
 	
 	/* 题目信息区域 */

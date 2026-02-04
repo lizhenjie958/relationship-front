@@ -127,8 +127,8 @@
 
 	// 处理分享code，获取跳转路径
 	const handleShareCode = async (shareCode) => {
-		// 验证shareCode是否为8位字符串
-		if (shareCode && /^[a-zA-Z0-9]{8}$/.test(shareCode)) {
+		// 验证shareCode是否为32位字符串
+		if (shareCode && /^[a-zA-Z0-9]{32}$/.test(shareCode)) {
 			try {
 				// 调用查询目标路径接口
 				const response = await queryTargetPath({

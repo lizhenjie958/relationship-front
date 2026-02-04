@@ -50,6 +50,7 @@
 			:answerStatus="answerStatus"
 			:userAnswers="userAnswers"
 			:showAnswer="showAnswer"
+			:questions="questions"
 			@selectOption="handleSelectOption"
 			@submitAnswers="handleSubmitAnswers"
 		/>
@@ -58,7 +59,9 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-	import QuestionInfo from '@/components/QuestionInfo.vue';
+import QuestionInfo from '@/components/QuestionInfo.vue';
+import { request } from '@/utils/request.js';
+import { getExamPaperDetail } from '@/api/examPaperApi.js';
 	
 	// 接收外部传入的答题记录ID参数
 	const props = defineProps({
@@ -68,21 +71,45 @@
 		}
 	});
 	
-	// 模拟数据
-	const protagonistName = ref('张三');
-	const answerTime = ref('2026-01-27 14:30');
-	const score = ref(85);
-	const paperId = ref('P20260127001');
-	const recordId = ref(props.id || 'R20260127001');
+	// 答卷详情数据
+const protagonistName = ref('');
+const answerTime = ref('');
+const score = ref(0);
+const paperId = ref('');
+const recordId = ref(props.id || '');
+const examPaperName = ref('');
 
-	// 答题状态管理
-	const answerStatus = ref('completed'); // ongoing, expired, completed
-	const showAnswer = ref(false);
-	const userAnswers = ref(['A', 'C', 'D']); // 模拟用户答案
+// 答题状态管理
+const answerStatus = ref(''); // ongoing, expired, completed
+const showAnswer = ref(false);
+const userAnswers = ref([]); // 用户答案
+const questions = ref([]); // 题目数据
 
-	// 计算属性
-	const statusText = ref('');
-	const statusClass = ref('');
+// 计算属性
+const statusText = ref('');
+const statusClass = ref('');
+
+// 状态映射
+const statusMap = {
+	1: 'ongoing', // ANSWERING
+	2: 'completed', // COMPLETED
+	3: 'expired', // GIVEN_UP
+	4: 'expired' // TIMED_OUT
+};
+
+// 状态文本映射
+const statusTextMap = {
+	'ongoing': '答题中',
+	'completed': '已完成',
+	'expired': '已过期'
+};
+
+// 状态样式映射
+const statusClassMap = {
+	'ongoing': 'status-ongoing',
+	'completed': 'status-completed',
+	'expired': 'status-expired'
+};
 
 	// 切换显示答案
 	const toggleShowAnswer = () => {
@@ -104,55 +131,172 @@
 	};
 
 	// 处理提交答案
-	const handleSubmitAnswers = (answers) => {
-		console.log('Submitted answers:', answers);
+const handleSubmitAnswers = async (answers) => {
+	if (!recordId.value) {
 		uni.showToast({
-			title: '答案已提交',
-			icon: 'success'
+			title: '记录ID不能为空',
+			icon: 'none'
 		});
-	};
+		return;
+	}
+	
+	try {
+		uni.showLoading({
+			title: '提交中...'
+		});
+		
+		// 构建请求参数
+		const requestData = {
+			id: recordId.value,
+			answerQuestionDTOList: answers.map((answer, index) => ({
+				questionNo: index + 1,
+				answerOptionList: [answer]
+			}))
+		};
+		
+		// 调用提交答案API
+		const response = await request({
+			url: '/answerPaper/completeAnswer',
+			method: 'POST',
+			data: requestData
+		});
+		
+		if (response.code === 200) {
+			// 获取得分
+			const score = response.data || 0;
+			
+			// 显示得分提示
+			uni.showModal({
+				title: '提交成功',
+				content: `您的得分为：${score}分`,
+				showCancel: false,
+				success: () => {
+					// 重新刷新页面
+					setTimeout(() => {
+						// 使用uni.reLaunch或uni.navigateBack刷新页面
+						uni.reLaunch({
+							url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId.value}`
+						});
+					}, 1000);
+				}
+			});
+		} else {
+			uni.showToast({
+				title: response.msg || '提交答案失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('提交答案失败:', error);
+		uni.showToast({
+			title: '提交答案失败，请稍后重试',
+			icon: 'none'
+		});
+	} finally {
+		uni.hideLoading();
+	}
+};
 
 	// 更新状态显示
-	const updateStatusDisplay = () => {
-		switch (answerStatus.value) {
-			case 'ongoing':
-				statusText.value = '进行中';
-				statusClass.value = 'status-ongoing';
-				break;
-			case 'expired':
-				statusText.value = '已过期';
-				statusClass.value = 'status-expired';
-				break;
-			case 'completed':
-				statusText.value = '已完成';
-				statusClass.value = 'status-completed';
-				break;
-		}
-	};
+const updateStatusDisplay = () => {
+	statusText.value = statusTextMap[answerStatus.value] || '答题中';
+	statusClass.value = statusClassMap[answerStatus.value] || 'status-ongoing';
+};
 	
 	// 页面挂载
-	onMounted(() => {
-		// 这里可以根据传入的答题记录ID获取实际数据
-		console.log('Answer record page mounted with recordId:', recordId.value);
-		// 模拟获取数据
-		// fetchAnswerRecordData(recordId.value);
-		// 更新状态显示
-		updateStatusDisplay();
-	});
+onMounted(async () => {
+	// 这里可以根据传入的答题记录ID获取实际数据
+	console.log('Answer record page mounted with recordId:', recordId.value);
+	// 调用API获取数据
+	await fetchAnswerRecordData(recordId.value);
+});
 	
-	// 模拟获取答题记录数据
-	const fetchAnswerRecordData = (recordId) => {
-		// 实际项目中，这里会调用API获取数据
-		// 模拟数据加载
+	// 获取答题记录数据
+const fetchAnswerRecordData = async (recordId) => {
+	if (!recordId) {
+		uni.showToast({
+			title: '记录ID不能为空',
+			icon: 'none'
+		});
+		return;
+	}
+	
+	try {
 		uni.showLoading({
 			title: '加载中...'
 		});
 		
-		setTimeout(() => {
-			uni.hideLoading();
-			// 模拟数据赋值
-		}, 500);
-	};
+		// 调用答卷详情API
+		const response = await request({
+			url: '/answerPaper/queryDetail',
+			method: 'POST',
+			data: {
+				id: recordId
+			}
+		});
+		
+		if (response.code === 200) {
+			const data = response.data;
+			
+			// 更新答卷详情数据
+			protagonistName.value = data.protagonistInfoDTO?.protagonist || '';
+			answerTime.value = data.createTime ? new Date(data.createTime).toLocaleString() : '';
+			score.value = data.score || 0;
+			paperId.value = data.examPaperId || '';
+			examPaperName.value = data.examPaperName || '';
+			
+			// 设置答题状态
+			const statusCode = data.answerStatus || 1;
+			answerStatus.value = statusMap[statusCode] || 'ongoing';
+			
+			// 更新状态显示
+			updateStatusDisplay();
+			
+			// 如果有paperId，获取试题详情
+			if (paperId.value) {
+				await fetchExamPaperQuestions(paperId.value);
+			}
+		} else {
+			uni.showToast({
+				title: response.msg || '获取答卷详情失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('获取答卷详情失败:', error);
+		uni.showToast({
+			title: '获取答卷详情失败，请稍后重试',
+			icon: 'none'
+		});
+	} finally {
+		uni.hideLoading();
+	}
+};
+
+// 根据试卷ID获取试题详情
+const fetchExamPaperQuestions = async (paperId) => {
+	try {
+		const response = await getExamPaperDetail({
+			id: paperId
+		});
+		
+		if (response.code === 200) {
+			// 更新题目数据
+			questions.value = response.data.questionDTOList || [];
+		} else {
+			uni.showToast({
+				title: response.msg || '获取试题详情失败',
+				icon: 'none'
+			});
+		}
+	} catch (error) {
+		console.error('获取试题详情失败:', error);
+		uni.showToast({
+			title: '获取试题详情失败，请稍后重试',
+			icon: 'none'
+		});
+	}
+};
 </script>
 
 <style lang="scss" scoped>
