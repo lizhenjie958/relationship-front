@@ -18,7 +18,7 @@
 				</view>
 				
 				<!-- 认领按钮 -->
-				<view v-if="shareMode" class="claim-section">
+				<view class="claim-section">
 					<button class="claim-btn" @click="handleClaim">
 						<text class="claim-btn-text">认领试卷</text>
 					</button>
@@ -30,7 +30,7 @@
 <QuestionInfo 
 	:paperId="paperId"
 	:usageSource="'exam-paper-detail'"
-	:showAnswer="!shareMode"
+	:showAnswer="showAnswer"
 	:questions="questions"
 />
 	</view>
@@ -60,6 +60,12 @@ import { request } from '@/utils/request.js';
 	const creatorName = ref('系统管理员');
 	// 题目数据
 	const questions = ref([]);
+	// 是否展示答案
+	const showAnswer = ref(false);
+	// 来源类型
+	const source = ref('');
+	// 答题状态
+	const answerStatus = ref('');
 	
 	// 获取试卷详情
 	const fetchPaperDetail = async () => {
@@ -122,19 +128,28 @@ import { request } from '@/utils/request.js';
 		}
 	};
 
-	// 分享模式状态
-const shareMode = ref(false);
+	// 分享码
 const shareCode = ref('');
 
 // 页面加载时获取URL参数
 onLoad((options) => {
-	// 检查是否是分享模式
-	if (options.share === '1') {
-		shareMode.value = true;
-	}
 	// 保存分享码
 	if (options.shareCode) {
 		shareCode.value = options.shareCode;
+	}
+	// 保存来源
+	if (options.source) {
+		source.value = options.source;
+	}
+	// 保存答题状态
+	if (options.answerStatus) {
+		answerStatus.value = options.answerStatus;
+	}
+	
+	// 根据来源判断是否默认展示答案
+	// 如果是从试题列表进入的，默认展示答案
+	if (options.source === 'exam-paper-list') {
+		showAnswer.value = true;
 	}
 });
 

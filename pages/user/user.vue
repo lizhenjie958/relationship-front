@@ -5,7 +5,11 @@
 		<view class="user-card">
 			<view class="user-info">
 				<view class="user-header">
-					<image :src="isMember ? '/static/images/member.png' : '/static/images/member-n.png'" class="member-image" />
+					<!-- 头像和会员标识 -->
+					<view class="avatar-container" @click="chooseAvatar">
+						<image :src="avatarUrl" class="user-avatar" />
+						<image v-if="isMember" :src="'/static/images/member.png'" class="member-badge" />
+					</view>
 					<template v-if="!isEditing">
 						<view class="user-name-container" @click="startEditing">
 							<text class="user-name">{{ userName }}</text>
@@ -98,7 +102,9 @@
 </template>
 
 <script setup>
-	import { ref } from 'vue';
+	import { ref, onMounted, computed } from 'vue';
+	import { getCurrentUser, getUserId } from '@/utils/auth.js';
+	import { request } from '@/utils/request.js';
 	
 	// 是否为会员
 	const isMember = ref(false); // 默认非会员
@@ -107,6 +113,40 @@
 	const userName = ref('微信用户');
 	const isEditing = ref(false);
 	const editedName = ref(userName.value);
+	// 头像相关
+	const avatar = ref('');
+	const defaultAvatar = 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=default%20user%20avatar%20simple%20modern%20design&image_size=square';
+	const avatarUrl = computed(() => avatar.value || defaultAvatar);
+	// 用户ID
+	const userId = ref('');
+	
+	// 获取当前用户信息
+	const fetchCurrentUser = async () => {
+		try {
+			const userInfo = await getCurrentUser();
+			userName.value = userInfo.username || '微信用户';
+			editedName.value = userName.value;
+			// 获取头像
+			avatar.value = userInfo.avatar || '';
+			// 检查是否为会员
+			isMember.value = userInfo.userType === 1;
+		} catch (error) {
+			console.error('获取用户信息失败:', error);
+		}
+		finally {
+			// 始终从存储中获取用户ID
+			const storedUserId = getUserId();
+			if (storedUserId) {
+				userId.value = storedUserId;
+				console.log('用户ID:', userId.value);
+			}
+		}
+	};
+	
+	// 页面加载时获取用户信息
+	onMounted(async () => {
+		await fetchCurrentUser();
+	});
 	
 	// 跳转到答题记录
 	const navigateToAnswerList = () => {
@@ -144,17 +184,29 @@
 	
 	// 联系客服
 	const contactService = () => {
-		uni.showModal({
-			title: '联系客服',
-			content: '客服热线：400-123-4567\n工作时间：9:00-18:00',
-			confirmText: '拨打电话',
-			cancelText: '取消',
+		// 使用uni-app的API打开微信小程序客服
+		uni.openCustomerServiceChat({
+			corpId: '', // 企业ID，非企业小程序不需要
+			showMessageCard: true,
 			success: (res) => {
-				if (res.confirm) {
-					uni.makePhoneCall({
-						phoneNumber: '4001234567'
-					});
-				}
+				console.log('打开客服成功:', res);
+			},
+			fail: (err) => {
+				console.error('打开客服失败:', err);
+				// 失败时显示备用方案
+				uni.showModal({
+					title: '联系客服',
+					content: '客服热线：400-123-4567\n工作时间：9:00-18:00',
+					confirmText: '拨打电话',
+					cancelText: '取消',
+					success: (res) => {
+						if (res.confirm) {
+							uni.makePhoneCall({
+								phoneNumber: '4001234567'
+							});
+						}
+					}
+				});
 			}
 		});
 	};
@@ -163,33 +215,13 @@
 	const shareApp = () => {
 		uni.showModal({
 			title: '分享解锁会员',
-			content: '分享此应用给好友，双方均可获得永久会员权益！',
-			confirmText: '立即分享',
-			cancelText: '取消',
+			content: '请点击右上角的「...」按钮，选择「发送给朋友」或「分享到朋友圈」，分享此应用给好友，超过26位好友注册即可获得永久会员权益！',
+			confirmText: '我知道了',
+			showCancel: false,
 			success: (res) => {
 				if (res.confirm) {
-					uni.share({
-						provider: "weixin",
-						scene: "WXSceneSession",
-						title: "推荐一款好用的学习工具",
-						content: "快来和我一起学习，分享即可获得永久会员权益！",
-						imageUrl: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=educational%20app%20promotion%20banner%20learning%20tools%20modern%20design&image_size=landscape_16_9",
-						path: "/pages/index/index",
-						success: function (res) {
-							console.log("success:", res);
-							uni.showToast({
-								title: '分享成功',
-								icon: 'success'
-							});
-						},
-						fail: function (err) {
-							console.log("fail:", err);
-							uni.showToast({
-								title: '分享失败',
-								icon: 'none'
-							});
-						}
-					});
+					// 用户确认后，引导用户点击右上角分享
+					console.log('用户已了解分享方式');
 				}
 			}
 		});
@@ -221,11 +253,93 @@
 		isEditing.value = false;
 	};
 	
-	// 用户名更新事件
-	const onUserNameUpdated = (newName) => {
-		console.log('用户名已更新:', newName);
-		// 这里可以添加更新用户名的API调用等逻辑
+	// 选择头像
+	const chooseAvatar = () => {
+		uni.chooseImage({
+			count: 1,
+			sizeType: ['compressed'],
+			sourceType: ['album', 'camera'],
+			success: async (res) => {
+				const tempFilePaths = res.tempFilePaths;
+				// 这里可以上传图片到服务器，获取头像地址
+				// 暂时使用本地路径作为示例
+				const avatarUrl = tempFilePaths[0];
+				// 更新头像
+				avatar.value = avatarUrl;
+				// 调用更新用户接口
+				await updateUserInfo({
+					username: userName.value,
+					avatar: avatarUrl
+				});
+			},
+			fail: (err) => {
+				console.error('选择头像失败:', err);
+			}
+		});
 	};
+
+	// 更新用户信息
+	const updateUserInfo = async (userData) => {
+		try {
+			const response = await request({
+				url: '/user/updateUser',
+				method: 'POST',
+				data: userData
+			});
+			
+			if (response.code === 200) {
+				uni.showToast({
+					title: '更新成功',
+					icon: 'success'
+				});
+			} else {
+				uni.showToast({
+					title: response.msg || '更新失败',
+					icon: 'none'
+				});
+			}
+		} catch (error) {
+			console.error('更新用户信息失败:', error);
+			uni.showToast({
+				title: '更新失败',
+				icon: 'none'
+			});
+		}
+	};
+
+	// 用户名更新事件
+	const onUserNameUpdated = async (newName) => {
+		console.log('用户名已更新:', newName);
+		// 调用更新用户接口
+		await updateUserInfo({
+			username: newName,
+			avatar: avatar.value
+		});
+	};
+
+	// 微信小程序分享给好友 - 微信会自动识别此函数，无需导出
+    onShareAppMessage(() => {
+		const sharePath = `/pages/index/index?inviterId=${userId.value}`;
+		return {
+			title: '推荐一款好用的学习工具',
+			desc: '快来和我一起学习，分享即可获得永久会员权益！超过26位好友注册即可获得永久会员权益！',
+			path: sharePath,
+			imageUrl: ''
+		};
+    })
+
+	// 微信小程序分享到朋友圈 - 微信会自动识别此函数，无需导出
+	onShareTimeline(()=>{
+		const sharePath = `/pages/index/index?inviterId=${userId.value}`;
+		return {
+			title: '推荐一款好用的学习工具',
+			desc: '快来和我一起学习，分享即可获得永久会员权益！超过26位好友注册即可获得永久会员权益！',
+			path: sharePath,
+			imageUrl: ''
+		};
+	})
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -257,22 +371,48 @@
 	}
 	
 	.user-header {
-		display: flex;
-		align-items: center;
-		gap: 16rpx;
-	}
+				display: flex;
+				align-items: center;
+				gap: 16rpx;
+			}
 
-	.user-name {
-		font-size: 36rpx;
-		font-weight: 600;
-		color: #2c3e50;
-	}
+			/* 头像容器 */
+			.avatar-container {
+				position: relative;
+				cursor: pointer;
+			}
 
-	.member-image {
-		width: 56rpx;
-		height: 56rpx;
-		object-fit: contain;
-	}
+			/* 用户头像 */
+			.user-avatar {
+				width: 80rpx;
+				height: 80rpx;
+				border-radius: 50%;
+				object-fit: cover;
+				border: 3rpx solid #fff;
+				box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+				transition: all 0.3s ease;
+			}
+
+			.avatar-container:active .user-avatar {
+				transform: scale(0.95);
+			}
+
+			/* 会员标识 */
+			.member-badge {
+				position: absolute;
+				top: -8rpx;
+				right: -8rpx;
+				width: 36rpx;
+				height: 36rpx;
+				object-fit: contain;
+				z-index: 1;
+			}
+
+			.user-name {
+				font-size: 36rpx;
+				font-weight: 600;
+				color: #2c3e50;
+			}
 
 	/* 用户名容器样式 */
 	.user-name-container {
