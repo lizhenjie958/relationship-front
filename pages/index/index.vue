@@ -1,23 +1,74 @@
 <template>
 	<view class="container">
+		<!-- 页面头部 - 包含标题和日期选择 -->
+		<view class="page-header">
+			<view class="header-title-section">
+				<text class="page-main-title">数据统计</text>
+				<text class="page-sub-title">查看每日答题和出题情况</text>
+			</view>
+			<view class="header-date-section">
+				<picker mode="date" :value="selectedDate" :end="todayDate" @change="onDateChange">
+					<view class="date-picker-btn">
+						<view class="calendar-icon">
+							<text class="calendar-icon-text">📅</text>
+						</view>
+						<view class="date-info">
+							<text class="date-label">统计日期</text>
+							<text class="date-value">{{ selectedDate }}</text>
+						</view>
+						<view class="date-arrow">
+							<text class="arrow-icon">›</text>
+						</view>
+					</view>
+				</picker>
+			</view>
+		</view>
+
 		<!-- 今日答题统计 -->
 		<view class="today-stats-container">
 			<view class="today-stats-header">
-				<text class="today-stats-title">今日答题统计</text>
-				<text class="today-date">{{ todayDate }}</text>
+				<view class="section-title">
+					<view class="title-icon blue">📊</view>
+					<text class="today-stats-title">答题统计</text>
+				</view>
 			</view>
 			<view class="stats-container">
 				<view class="stat-card">
 					<text class="stat-label">答题</text>
-					<text class="stat-value">1次</text>
+					<text class="stat-value">{{ answerCnt }}次</text>
 				</view>
 				<view class="stat-card">
 					<text class="stat-label">最高得分</text>
-					<text class="stat-value">80</text>
+					<text class="stat-value">{{ answerMaxScore }}</text>
 				</view>
 				<view class="stat-card">
 					<text class="stat-label">全国排名</text>
-					<text class="stat-value">1000</text>
+					<text class="stat-value">{{ answerMaxScoreRank }}</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 今日出题统计 -->
+		<view class="creator-stats-container">
+			<view class="today-stats-header">
+				<view class="section-title">
+					<view class="title-icon purple">📝</view>
+					<text class="today-stats-title">出题统计</text>
+				</view>
+			</view>
+			<view class="stats-container">
+				<view class="stat-card">
+					<text class="stat-label">作答次数</text>
+					<text class="stat-value">{{ examCnt }}次</text>
+				</view>
+				<view class="stat-card">
+					<text class="stat-label">全国排名</text>
+					<text class="stat-value">{{ examCntRank }}</text>
+				</view>
+				<view class="stat-card">
+					<text class="stat-label">热门试卷</text>
+					<text v-if="hotExamPaperId" class="stat-value hot-exam" @click="navigateToHotExamPaper">查看</text>
+					<text v-else class="stat-value">-</text>
 				</view>
 			</view>
 		</view>
@@ -101,6 +152,17 @@ import { request } from '@/utils/request.js';
 	const latestAnswering = ref(null);
 	// 主角名称提示框显示状态（保留，可能其他地方需要）
 	const showTooltip = ref(false);
+	
+	// 今日答题统计数据
+	const answerCnt = ref(0);
+	const answerMaxScore = ref(0);
+	const answerMaxScoreRank = ref(0);
+	const examCnt = ref(0);
+	const examCntRank = ref(0);
+	const hotExamPaperId = ref(null);
+	
+	// 日期选择
+	const selectedDate = ref('');
 
 	// 格式化日期
 	const formatDate = (date) => {
@@ -110,11 +172,16 @@ import { request } from '@/utils/request.js';
 		return `${year}-${month}-${day}`;
 	};
 
-	// 格式化日期时间
-	const formatDateTime = (dateString) => {
-		if (!dateString) return '';
-		const date = new Date(dateString);
-		return date.toLocaleString();
+	// 格式化日期时间为 YYYY-MM-DD HH:mm:ss 格式
+	const formatDateTime = (date) => {
+		if (!date) return '';
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		const seconds = String(date.getSeconds()).padStart(2, '0');
+		return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	};
 
 	// 生成模拟的已答题日期（正确格式）
@@ -151,6 +218,57 @@ import { request } from '@/utils/request.js';
 			}
 		} catch (error) {
 			console.error('获取最近进行中的答题记录失败:', error);
+		}
+	};
+
+	// 获取答题统计数据
+	const fetchTodayStatistics = async (dateStr) => {
+		try {
+			// 使用传入的日期或今日日期
+			const targetDate = dateStr ? new Date(dateStr) : new Date();
+			targetDate.setHours(0, 0, 0, 0);
+			const statisticsTime = formatDateTime(targetDate);
+			
+			const response = await request({
+				url: '/answerStatistics/dataByDay',
+				method: 'POST',
+				data: {
+					statisticsTime: statisticsTime
+				}
+			});
+			
+			if (response.code === 200 && response.data) {
+				const data = response.data;
+				answerCnt.value = data.answerCnt || 0;
+				answerMaxScore.value = data.answerMaxScore || 0;
+				answerMaxScoreRank.value = data.answerMaxScoreRank || 0;
+				examCnt.value = data.examCnt || 0;
+				examCntRank.value = data.examCntRank || 0;
+				hotExamPaperId.value = data.hotExamPaperId || null;
+			}
+		} catch (error) {
+			console.error('获取答题统计数据失败:', error);
+		}
+	};
+
+	// 日期切换
+	const onDateChange = (e) => {
+		selectedDate.value = e.detail.value;
+		// 重新获取统计数据
+		fetchTodayStatistics(selectedDate.value);
+	};
+
+	// 跳转到热门试卷
+	const navigateToHotExamPaper = () => {
+		if (hotExamPaperId.value) {
+			uni.navigateTo({
+				url: `/pages/exam-paper-detail/exam-paper-detail?id=${hotExamPaperId.value}`
+			});
+		} else {
+			uni.showToast({
+				title: '暂无热门试卷',
+				icon: 'none'
+			});
 		}
 	};
 
@@ -192,11 +310,16 @@ import { request } from '@/utils/request.js';
 	// 页面加载时初始化
 	onMounted(() => {
 		// 设置今日日期
-		todayDate.value = formatDate(new Date());
+		const today = new Date();
+		todayDate.value = formatDate(today);
+		// 初始化选中的日期为今日
+		selectedDate.value = formatDate(today);
 		// 设置已答题日期
 		answeredDates.value = generateAnsweredDates();
 		// 获取最近进行中的答题记录
 		fetchLatestAnswering();
+		// 获取今日答题统计数据
+		fetchTodayStatistics();
 	});
 
 	// 继续答题
@@ -310,6 +433,148 @@ import { request } from '@/utils/request.js';
 		font-size: 32rpx;
 		font-weight: bold;
 		color: #333333;
+	}
+
+	/* 热门试卷可点击样式 */
+	.hot-exam {
+		color: #1890ff;
+		cursor: pointer;
+	}
+
+	/* 页面头部样式 */
+	.page-header {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		border-radius: 20rpx;
+		padding: 32rpx;
+		margin-bottom: 24rpx;
+		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.header-title-section {
+		flex: 1;
+	}
+
+	.page-main-title {
+		display: block;
+		font-size: 40rpx;
+		font-weight: bold;
+		color: #ffffff;
+		margin-bottom: 8rpx;
+	}
+
+	.page-sub-title {
+		display: block;
+		font-size: 24rpx;
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	/* 日期选择按钮样式 */
+	.date-picker-btn {
+		background: rgba(255, 255, 255, 0.2);
+		backdrop-filter: blur(10rpx);
+		border-radius: 16rpx;
+		padding: 20rpx 24rpx;
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+		border: 1rpx solid rgba(255, 255, 255, 0.3);
+		transition: all 0.3s ease;
+	}
+
+	.date-picker-btn:active {
+		background: rgba(255, 255, 255, 0.3);
+		transform: scale(0.98);
+	}
+
+	.calendar-icon {
+		width: 48rpx;
+		height: 48rpx;
+		background: rgba(255, 255, 255, 0.9);
+		border-radius: 12rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.calendar-icon-text {
+		font-size: 28rpx;
+	}
+
+	.date-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.date-label {
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.7);
+		margin-bottom: 4rpx;
+	}
+
+	.date-value {
+		font-size: 28rpx;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.date-arrow {
+		margin-left: 8rpx;
+	}
+
+	.arrow-icon {
+		font-size: 32rpx;
+		color: rgba(255, 255, 255, 0.8);
+	}
+
+	/* 区块标题样式 */
+	.section-title {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+	}
+
+	.title-icon {
+		width: 48rpx;
+		height: 48rpx;
+		border-radius: 12rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 28rpx;
+	}
+
+	.title-icon.blue {
+		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+	}
+
+	.title-icon.purple {
+		background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
+	}
+
+	/* 出题者视角统计容器 */
+	.creator-stats-container {
+		background-color: #ffffff;
+		border-radius: 16rpx;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 装饰元素 - 出题者视角使用不同的颜色 */
+	.creator-stats-container::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 6rpx;
+		background: linear-gradient(90deg, #722ed1, #eb2f96);
+		border-radius: 16rpx 16rpx 0 0;
 	}
 
 	/* 连续答题挑战容器 */
