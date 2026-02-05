@@ -40,10 +40,10 @@
 			</view>
 		</view>
 
-		<!-- 分享记录表格 -->
+		<!-- 未完成答题记录 -->
 		<view class="share-container">
 			<!-- 未完成答题提示 -->
-			<view class="unfinished-tip">
+			<view class="unfinished-tip" v-if="latestAnswering">
 				<view class="tip-icon">!</view>
 				<view class="tip-content">
 					<text class="tip-title">未完成答题</text>
@@ -51,11 +51,11 @@
 				</view>
 			</view>
 			
-			<!-- 分享记录 -->
-			<view class="share-content">
+			<!-- 最近进行中的答题记录 -->
+			<view class="share-content" v-if="latestAnswering">
 				<view class="share-header">
 					<view class="share-col">
-						<text>分享人</text>
+						<text>试卷名称</text>
 					</view>
 					<view class="share-col">
 						<text>主角</text>
@@ -63,22 +63,22 @@
 					<view class="share-col">
 						<text>过期时间</text>
 					</view>
-					<view class="share-col">
-						<text>操作</text>
-					</view>
 				</view>
-				<view class="share-row">
+				<view class="share-row" @click="continueAnswer(latestAnswering.id)">
 					<view class="share-col">
-						<text>老王</text>
+						<text>{{ latestAnswering.examPaperName }}</text>
 					</view>
 					<view class="share-col">
-						<text>刘星</text>
+						<view class="protagonist-info">
+							<image 
+								:src="latestAnswering.protagonistInfoDTO.picUrl" 
+								class="protagonist-avatar" 
+								mode="aspectFill"
+							></image>
+						</view>
 					</view>
 					<view class="share-col">
-						<text>2026-01-26 22:18</text>
-					</view>
-					<view class="share-col">
-						<text class="continue-btn" @click="continueAnswer(1)">→</text>
+						<text>{{ formatDateTime(latestAnswering.timeoutTime) }}</text>
 					</view>
 				</view>
 			</view>
@@ -89,13 +89,18 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-	import { onLoad } from '@dcloudio/uni-app';
-	import { queryTargetPath } from '@/api/shareApi.js';
+import { onLoad } from '@dcloudio/uni-app';
+import { queryTargetPath } from '@/api/shareApi.js';
+import { request } from '@/utils/request.js';
 
 	// 今日日期
 	const todayDate = ref('');
 	// 已答题日期（正确格式）
 	const answeredDates = ref([]);
+	// 最近进行中的答题记录
+	const latestAnswering = ref(null);
+	// 主角名称提示框显示状态（保留，可能其他地方需要）
+	const showTooltip = ref(false);
 
 	// 格式化日期
 	const formatDate = (date) => {
@@ -103,6 +108,13 @@
 		const month = String(date.getMonth() + 1).padStart(2, '0');
 		const day = String(date.getDate()).padStart(2, '0');
 		return `${year}-${month}-${day}`;
+	};
+
+	// 格式化日期时间
+	const formatDateTime = (dateString) => {
+		if (!dateString) return '';
+		const date = new Date(dateString);
+		return date.toLocaleString();
 	};
 
 	// 生成模拟的已答题日期（正确格式）
@@ -123,6 +135,23 @@
 		}
 		
 		return dates;
+	};
+
+	// 获取最近进行中的答题记录
+	const fetchLatestAnswering = async () => {
+		try {
+			const response = await request({
+				url: '/answerPaper/queryLatestAnswering',
+				method: 'POST',
+				data: {}
+			});
+			
+			if (response.code === 200 && response.data) {
+				latestAnswering.value = response.data;
+			}
+		} catch (error) {
+			console.error('获取最近进行中的答题记录失败:', error);
+		}
 	};
 
 	// 处理分享code，获取跳转路径
@@ -147,6 +176,11 @@
 		}
 	};
 
+	// 切换主角名称提示框（保留，可能其他地方需要）
+	const toggleTooltip = () => {
+		showTooltip.value = !showTooltip.value;
+	};
+
 	// 页面加载时获取URL参数
 	onLoad((options) => {
 		// 解析URL参数中的shareCode
@@ -161,6 +195,8 @@
 		todayDate.value = formatDate(new Date());
 		// 设置已答题日期
 		answeredDates.value = generateAnsweredDates();
+		// 获取最近进行中的答题记录
+		fetchLatestAnswering();
 	});
 
 	// 继续答题
@@ -469,6 +505,51 @@
 
 	.continue-btn:hover {
 		background-color: #40a9ff;
+	}
+
+	/* 主角信息样式 */
+	.protagonist-info {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* 主角头像样式 */
+	.protagonist-avatar {
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 50%;
+		border: 2rpx solid #f0f0f0;
+		transition: all 0.3s ease;
+		cursor: pointer;
+		transform: translateY(0) scale(1);
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		z-index: 10;
+	}
+
+	.protagonist-avatar:hover {
+		transform: translateY(-4rpx) scale(2);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.2);
+	}
+
+	/* 主角信息样式 - 调整位置防止头像放大时遮挡其他内容 */
+	.protagonist-info {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 10rpx;
+	}
+
+	/* 点击行效果 */
+	.share-row {
+		cursor: pointer;
+		transition: background-color 0.3s ease;
+	}
+
+	.share-row:active {
+		background-color: #f0f7ff;
 	}
 
 	/* 底部导航栏 */
