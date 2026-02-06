@@ -1,5 +1,13 @@
 <template>
-	<view class="container">
+	<view 
+		class="container"
+		@refresherrefresh="onRefresh"
+		@refresherpulling="onRefresherPulling"
+		:refresher-enabled="true"
+		:refresher-threshold="80"
+		:refresher-default-style="'default'"
+		:refresher-triggered="refresherTriggered"
+	>
 		<!-- 页面头部 - 包含标题和日期选择 -->
 		<view class="page-header">
 			<view class="header-title-section">
@@ -87,6 +95,7 @@
 					start-date="2021-01-01"
 					end-date="2026-12-31"
 					:selected="answeredDates"
+					@monthSwitch="onMonthSwitch"
 				></uni-calendar>
 			</view>
 		</view>
@@ -143,6 +152,8 @@
 import { onLoad } from '@dcloudio/uni-app';
 import { queryTargetPath } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
+import { queryCheckinCalendar, queryDataByDay } from '@/api/answerStatisticsApi.js';
+import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 
 	// 今日日期
 	const todayDate = ref('');
@@ -152,6 +163,8 @@ import { request } from '@/utils/request.js';
 	const latestAnswering = ref(null);
 	// 主角名称提示框显示状态（保留，可能其他地方需要）
 	const showTooltip = ref(false);
+	// 下拉刷新状态
+	const refresherTriggered = ref(false);
 	
 	// 今日答题统计数据
 	const answerCnt = ref(0);
@@ -184,34 +197,56 @@ import { request } from '@/utils/request.js';
 		return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	};
 
-	// 生成模拟的已答题日期（正确格式）
-	const generateAnsweredDates = () => {
-		const dates = [];
-		const today = new Date();
-		
-		// 模拟最近7天中有5天答题了
-		for (let i = 0; i < 7; i++) {
-			if (i !== 2 && i !== 4) { // 跳过2天
-				const date = new Date(today);
-				date.setDate(today.getDate() - i);
-				dates.push({
-					date: formatDate(date),
+	// 获取签到日历数据
+	const fetchCheckinCalendar = async (dateStr) => {
+		try {
+			// 使用传入的日期或今日日期，格式化为 YYYY-MM-01
+			const targetDate = dateStr ? new Date(dateStr) : new Date();
+			const year = targetDate.getFullYear();
+			const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+			const checkinMonth = `${year}-${month}-01`;
+			
+			const response = await queryCheckinCalendar({
+				checkinMonth: checkinMonth
+			});
+			
+			if (response.code === 200 && response.data) {
+				// 将接口返回的日期列表转换为日历组件需要的格式
+				// checkinDateList 是已答题的日期数组
+				const checkinDateList = response.data.checkinDateList || [];
+				answeredDates.value = checkinDateList.map(date => ({
+					date: date,
 					info: '已答题'
-				});
+				}));
 			}
+		} catch (error) {
+			console.error('获取签到日历数据失败:', error);
 		}
+	};
+
+	// 处理日历月份切换
+	const onMonthSwitch = (e) => {
+		const { year, month } = e;
+		// 获取当前年月
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		const currentMonth = now.getMonth() + 1;
 		
-		return dates;
+		// 判断切换到的月份是否是本月之后的月份
+		if (year > currentYear || (year === currentYear && month > currentMonth)) {
+			// 本月之后的月份，清空签到数据
+			answeredDates.value = [];
+		} else {
+			// 本月或之前的月份，调用接口获取签到数据
+			const dateStr = `${year}-${String(month).padStart(2, '0')}-01`;
+			fetchCheckinCalendar(dateStr);
+		}
 	};
 
 	// 获取最近进行中的答题记录
 	const fetchLatestAnswering = async () => {
 		try {
-			const response = await request({
-				url: '/answerPaper/queryLatestAnswering',
-				method: 'POST',
-				data: {}
-			});
+			const response = await queryLatestAnswering({});
 			
 			if (response.code === 200 && response.data) {
 				latestAnswering.value = response.data;
@@ -227,14 +262,10 @@ import { request } from '@/utils/request.js';
 			// 使用传入的日期或今日日期
 			const targetDate = dateStr ? new Date(dateStr) : new Date();
 			targetDate.setHours(0, 0, 0, 0);
-			const statisticsTime = formatDateTime(targetDate);
+			const statisticsDate = formatDate(targetDate);
 			
-			const response = await request({
-				url: '/answerStatistics/dataByDay',
-				method: 'POST',
-				data: {
-					statisticsTime: statisticsTime
-				}
+			const response = await queryDataByDay({
+				statisticsDate: statisticsDate
 			});
 			
 			if (response.code === 200 && response.data) {
@@ -314,8 +345,8 @@ import { request } from '@/utils/request.js';
 		todayDate.value = formatDate(today);
 		// 初始化选中的日期为今日
 		selectedDate.value = formatDate(today);
-		// 设置已答题日期
-		answeredDates.value = generateAnsweredDates();
+		// 获取签到日历数据
+		fetchCheckinCalendar();
 		// 获取最近进行中的答题记录
 		fetchLatestAnswering();
 		// 获取今日答题统计数据
@@ -328,6 +359,24 @@ import { request } from '@/utils/request.js';
 			url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
 		});
 	};
+
+	// 下拉刷新
+	const onRefresh = async () => {
+		refresherTriggered.value = true;
+		await fetchTodayStatistics();
+		await fetchCheckinCalendar();
+		await fetchLatestAnswering();
+		refresherTriggered.value = false;
+		// 显示刷新成功提示
+		uni.showToast({
+			title: '数据已更新',
+			icon: 'success',
+			duration: 1500
+		});
+	};
+
+	// 下拉刷新拉动中
+	const onRefresherPulling = () => {};
 </script>
 
 <style scoped>

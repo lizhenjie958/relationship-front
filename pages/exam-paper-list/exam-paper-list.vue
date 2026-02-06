@@ -2,6 +2,13 @@
 	<view class="question-list-container" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
 		
 		<view class="table-container">
+			<!-- 加载状态 -->
+			<view v-if="loading" class="loading-container">
+				<view class="loading-spinner"></view>
+				<text class="loading-text">加载中...</text>
+			</view>
+			
+			<template v-else>
 			<!-- 表格头部 -->
 			<view class="table-header">
 				<view class="table-cell paper-name-cell">试卷名</view>
@@ -49,8 +56,11 @@
 
 			<!-- 空状态 -->
 			<view v-if="questions.length === 0" class="empty-state">
+				<view class="empty-icon">📭</view>
 				<text class="empty-text">暂无试卷数据</text>
+				<text class="empty-hint">快去生成一份试卷吧</text>
 			</view>
+			</template>
 		</view>
 	</view>
 </template>
@@ -58,9 +68,13 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { request } from '@/utils/request.js';
+import { queryExamPaperList, deleteExamPaper } from '@/api/examPaperApi.js';
 
 // 试卷数据
 const questions = ref([]);
+
+// 加载状态
+const loading = ref(false);
 
 // 滑动相关数据
 const swipeOffset = ref({}); // 存储每个项目的滑动偏移量
@@ -94,11 +108,7 @@ const deleteQuestion = (questionId) => {
 			if (res.confirm) {
 				try {
 					// 调用删除接口
-					const response = await request({
-						url: '/examPaper/delete',
-						method: 'POST',
-						data: { id: questionId }
-					});
+					const response = await deleteExamPaper({ id: questionId });
 					
 					if (response.code === 200) {
 						uni.showToast({
@@ -182,12 +192,10 @@ const handleTouchEnd = (event, index) => {
 
 // 获取试卷列表
 const fetchExamPapers = async () => {
+	loading.value = true;
 	try {
-		const response = await request({
-			url: '/examPaper/queryList',
-			method: 'POST',
-			data: {}
-		});
+// 调用API
+		const response = await queryExamPaperList({});
 		
 		if (response.code === 200) {
 			// 将接口返回的数据转换为组件所需的格式
@@ -212,6 +220,8 @@ const fetchExamPapers = async () => {
 			title: '获取试卷列表失败',
 			icon: 'none'
 		});
+	} finally {
+		loading.value = false;
 	}
 };
 
@@ -219,10 +229,20 @@ const fetchExamPapers = async () => {
 const onRefresh = async () => {
 	// 开始刷新，显示loading
 	refresherTriggered.value = true;
+	// 重置滑动状态
+	resetAllSwipe();
 	// 调用API获取最新试卷列表
 	await fetchExamPapers();
 	// 刷新完成，隐藏loading
 	refresherTriggered.value = false;
+	// 显示刷新成功提示
+	if (questions.value.length > 0) {
+		uni.showToast({
+			title: `已更新 ${questions.value.length} 条数据`,
+			icon: 'success',
+			duration: 1500
+		});
+	}
 };
 
 // 下拉过程事件处理（可选）
@@ -236,49 +256,92 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/styles/theme.scss';
+
 .question-list-container {
-	padding: 20rpx;
-	background-color: #f5f7fa;
+	padding: 24rpx;
+	background: linear-gradient(180deg, #f0f5ff 0%, #f5f7fa 100%);
 	min-height: 100vh;
+}
+
+/* 加载状态 */
+.loading-container {
+	padding: 120rpx 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 24rpx;
+}
+
+.loading-spinner {
+	@include loading-spinner(64rpx, $primary);
+}
+
+.loading-text {
+	font-size: $font-md;
+	color: $text-tertiary;
+	font-weight: 500;
+	letter-spacing: 2rpx;
 }
 
 .table-container {
 	background-color: transparent;
-	border-radius: 16rpx;
-	padding: 20rpx;
+	border-radius: $radius-lg;
+	padding: 16rpx;
 }
 
 .table-header {
 	display: flex;
-	background-color: #f8f9fa;
-	border-radius: 12rpx;
+	background: linear-gradient(135deg, #f8faff 0%, #f0f5ff 100%);
+	border-radius: $radius-md;
 	padding: 24rpx;
 	font-weight: 600;
-	color: #333;
-	font-size: 28rpx;
-	margin: 0 12rpx 24rpx;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
+	color: $text-primary;
+	font-size: $font-md;
+	margin: 0 8rpx 24rpx;
+	box-shadow: $shadow-sm;
+	border: 2rpx solid rgba(24, 144, 255, 0.08);
+	letter-spacing: 1rpx;
 }
 
 .table-row {
 	display: flex;
 	align-items: center;
 	padding: 28rpx 24rpx;
-	border-bottom: 2rpx solid #f0f0f0;
-	transition: all 0.3s ease;
-	border-radius: 12rpx;
+	border-bottom: none;
+	transition: all $transition-normal;
+	border-radius: $radius-md;
 	margin: 0;
-	background-color: #fff;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+	background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+	box-shadow: $shadow-sm;
 	height: 100%;
 	box-sizing: border-box;
+	position: relative;
+	overflow: hidden;
+	
+	&::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 4rpx;
+		background: linear-gradient(180deg, $primary 0%, $primary-light 100%);
+		opacity: 0;
+		transition: opacity $transition-normal;
+	}
 }
 
-.table-row:hover {
-	background-color: #f8f9fa;
-	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
-	transform: translateY(-2rpx);
+.table-row:active {
+	background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+	box-shadow: $shadow-md;
+	transform: translateY(-1rpx);
+	
+	&::before {
+		opacity: 1;
+	}
 }
 
 .table-cell {
@@ -314,16 +377,25 @@ onMounted(() => {
 }
 
 .name {
-	font-size: 28rpx;
-	color: #333;
+	font-size: $font-md;
+	color: $text-primary;
+	font-weight: 500;
 }
 
 .avatar {
-	width: 60rpx;
-	height: 60rpx;
+	width: 72rpx;
+	height: 72rpx;
 	border-radius: 50%;
 	overflow: hidden;
-	background-color: #f0f0f0;
+	background: linear-gradient(135deg, #f0f2f5 0%, #e8eaf0 100%);
+	border: 4rpx solid #fff;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+	transition: all $transition-normal;
+}
+
+.table-row:active .avatar {
+	transform: scale(1.08);
+	box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
 }
 
 .avatar-image {
@@ -333,37 +405,44 @@ onMounted(() => {
 }
 
 .paper-name {
-	font-size: 28rpx;
-	color: #333;
+	font-size: $font-md;
+	color: $text-primary;
+	font-weight: 600;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 120rpx;
+	max-width: 140rpx;
 }
 
 .create-time {
-	font-size: 24rpx;
-	color: #666;
+	font-size: $font-sm;
+	color: $text-tertiary;
+	font-weight: 500;
 }
 
 /* 左滑操作样式 */
 .swipe-cell {
 	position: relative;
-	margin: 0 12rpx 16rpx;
-	border-radius: 12rpx;
+	margin: 0 8rpx 20rpx;
+	border-radius: $radius-md;
 	overflow: hidden;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+	box-shadow: $shadow-sm;
 	transform: translateZ(0);
 	backface-visibility: hidden;
 	height: 120rpx;
+	transition: all $transition-normal;
+}
+
+.swipe-cell:active {
+	box-shadow: $shadow-md;
 }
 
 /* 左滑操作按钮容器 */
 .swipe-actions {
 	position: absolute;
-	top: 10rpx;
+	top: 12rpx;
 	right: 0;
-	height: calc(100% - 20rpx);
+	height: calc(100% - 24rpx);
 	display: flex;
 	flex-direction: row;
 	z-index: 1;
@@ -435,14 +514,40 @@ onMounted(() => {
 	}
 
 	.empty-state {
-		padding: 100rpx 0;
-		text-align: center;
-	}
+	padding: 120rpx 40rpx;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 24rpx;
+}
 
-	.empty-text {
-		font-size: 28rpx;
-		color: #999;
+.empty-icon {
+	font-size: 120rpx;
+	opacity: 0.6;
+	animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0);
 	}
+	50% {
+		transform: translateY(-10rpx);
+	}
+}
+
+.empty-text {
+	font-size: 32rpx;
+	color: #909399;
+	font-weight: 600;
+}
+
+.empty-hint {
+	font-size: 26rpx;
+	color: #c0c4cc;
+	font-weight: 400;
+}
 
 	/* 响应式调整 */
 	@media (max-width: 750rpx) {

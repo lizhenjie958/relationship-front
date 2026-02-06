@@ -16,6 +16,13 @@
 
 		<!-- 表格容器 -->
 		<view class="table-container">
+			<!-- 加载状态 -->
+			<view v-if="loading" class="loading-container">
+				<view class="loading-spinner"></view>
+				<text class="loading-text">加载中...</text>
+			</view>
+			
+			<template v-else>
 			<!-- 表格头部 -->
 			<view class="table-header">
 					<view class="table-cell creator-cell">出题人</view>
@@ -53,8 +60,11 @@
 
 			<!-- 空状态 -->
 			<view v-if="filteredAnswers.length === 0" class="empty-state">
+				<view class="empty-icon">📭</view>
 				<text class="empty-text">暂无答题记录</text>
+				<text class="empty-hint">快去答题吧</text>
 			</view>
+			</template>
 		</view>
 	</view>
 </template>
@@ -62,6 +72,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { request } from '@/utils/request.js';
+import { queryAnswerPaperList } from '@/api/answerPaperApi.js';
 
 // Tab配置
 const tabs = [
@@ -76,11 +87,15 @@ const activeTab = ref('ongoing');
 // 模拟答题记录数据
 const answers = ref([]);
 
+// 加载状态
+const loading = ref(false);
+
 // 下拉刷新状态
 const refresherTriggered = ref(false);
 
 // 调用真实API获取答题记录
 const fetchAnswers = async () => {
+	loading.value = true;
 	try {
 		// 根据当前tab确定answerStatus参数
 		let answerStatusMap = {
@@ -90,12 +105,8 @@ const fetchAnswers = async () => {
 		};
 		
 		// 调用API
-		const response = await request({
-			url: '/answerPaper/queryList',
-			method: 'POST',
-			data: {
-				answerStatus: answerStatusMap[activeTab.value]
-			}
+		const response = await queryAnswerPaperList({
+			answerStatus: answerStatusMap[activeTab.value]
 		});
 		
 		if (response.code === 200) {
@@ -128,6 +139,8 @@ const fetchAnswers = async () => {
 			icon: 'none'
 		});
 		answers.value = [];
+	} finally {
+		loading.value = false;
 	}
 };
 
@@ -151,6 +164,14 @@ const onRefresh = async () => {
 	await fetchAnswers();
 	// 刷新完成，隐藏loading
 	refresherTriggered.value = false;
+	// 显示刷新成功提示
+	if (answers.value.length > 0) {
+		uni.showToast({
+			title: `已更新 ${answers.value.length} 条数据`,
+			icon: 'success',
+			duration: 1500
+		});
+	}
 };
 
 // 下拉过程事件处理（可选）
@@ -178,76 +199,152 @@ onMounted(async () => {
 });
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/styles/theme.scss';
+
 .answer-list-container {
-	padding: 20rpx;
-	background-color: #f5f7fa;
+	padding: 24rpx;
+	background: linear-gradient(180deg, #f0f5ff 0%, #f5f7fa 100%);
 	min-height: 100vh;
 }
 
+/* 加载状态 */
+.loading-container {
+	padding: 120rpx 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 24rpx;
+}
 
+.loading-spinner {
+	@include loading-spinner(64rpx, $primary);
+}
+
+.loading-text {
+	font-size: $font-md;
+	color: $text-tertiary;
+	font-weight: 500;
+	letter-spacing: 2rpx;
+}
 
 /* Tab样式 */
 .tab-container {
 	display: flex;
-	background-color: #fff;
-	border-radius: 12rpx;
-	padding: 8rpx;
-	margin-bottom: 30rpx;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+	border-radius: $radius-lg;
+	padding: 10rpx;
+	margin-bottom: 32rpx;
+	box-shadow: $shadow-sm;
+	border: 2rpx solid rgba(24, 144, 255, 0.08);
 }
 
 .tab-item {
 	flex: 1;
 	text-align: center;
-	padding: 16rpx;
-	border-radius: 8rpx;
-	transition: all 0.3s ease;
+	padding: 18rpx 16rpx;
+	border-radius: $radius-md;
+	transition: all $transition-normal;
+	position: relative;
+	overflow: hidden;
+	
+	&::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, $primary 0%, $primary-light 100%);
+		transition: width $transition-normal;
+		border-radius: $radius-full;
+	}
 }
 
 .tab-item.active {
-	background-color: #1890ff;
+	background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+	box-shadow: $shadow-primary;
+	
+	&::before {
+		display: none;
+	}
 }
 
 .tab-text {
-	font-size: 28rpx;
+	font-size: $font-md;
 	font-weight: 600;
-	color: #666;
-	transition: all 0.3s ease;
+	color: $text-secondary;
+	transition: all $transition-normal;
+	letter-spacing: 1rpx;
 }
 
 .tab-item.active .tab-text {
 	color: #fff;
 }
 
+.tab-item:not(.active):active {
+	background: rgba(24, 144, 255, 0.05);
+	
+	&::before {
+		width: 40%;
+	}
+}
+
 /* 表格样式 */
 .table-container {
-	background-color: #fff;
-	border-radius: 16rpx;
-	box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+	background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+	border-radius: $radius-lg;
+	box-shadow: $shadow-md;
 	overflow: hidden;
+	border: 2rpx solid rgba(24, 144, 255, 0.05);
 }
 
 .table-header {
 	display: flex;
-	background-color: #f8f9fa;
-	border-bottom: 2rpx solid #e9ecef;
-	padding: 20rpx;
+	background: linear-gradient(135deg, #f8faff 0%, #f0f5ff 100%);
+	border-bottom: 2rpx solid rgba(24, 144, 255, 0.08);
+	padding: 24rpx;
 	font-weight: 600;
-	color: #333;
-	font-size: 24rpx;
+	color: $text-primary;
+	font-size: $font-sm;
+	letter-spacing: 1rpx;
 }
 
 .table-row {
 	display: flex;
 	align-items: center;
-	padding: 24rpx 20rpx;
-	border-bottom: 2rpx solid #f0f0f0;
-	transition: background-color 0.3s ease;
+	padding: 28rpx 24rpx;
+	border-bottom: 2rpx solid $border-color-light;
+	transition: all $transition-normal;
+	background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+	position: relative;
+	overflow: hidden;
+	
+	&::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 4rpx;
+		background: linear-gradient(180deg, $primary 0%, $primary-light 100%);
+		opacity: 0;
+		transition: opacity $transition-normal;
+	}
 }
 
-.table-row:hover {
-	background-color: #f8f9fa;
+.table-row:last-child {
+	border-bottom: none;
+}
+
+.table-row:active {
+	background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+	
+	&::before {
+		opacity: 1;
+	}
 }
 
 .table-cell {
@@ -273,48 +370,67 @@ onMounted(async () => {
 }
 
 .score-cell {
-				flex: 1;
-				justify-content: center;
-			}
-
-		/* 添加表格行点击效果 */
-		.table-row {
-			cursor: pointer;
-			transition: all 0.3s ease;
-		}
-
-		.table-row:active {
-			background-color: #e6f7ff;
-		}
+	flex: 1;
+	justify-content: center;
+}
 
 .creator,
 .answer-time,
 .complete-time,
 .score {
-	font-size: 24rpx;
-	color: #333;
+	font-size: $font-sm;
+	color: $text-primary;
+	font-weight: 500;
 }
 
 .protagonist {
-		font-size: 24rpx;
-		color: #333;
-		cursor: pointer;
-		transition: color 0.3s ease;
-	}
+	font-size: $font-sm;
+	color: $text-primary;
+	font-weight: 600;
+	transition: all $transition-normal;
+}
 
-	.protagonist:hover {
-		color: #1890ff;
-	}
+.table-row:active .protagonist {
+	color: $primary;
+}
 
 /* 空状态样式 */
 .empty-state {
-	padding: 100rpx 0;
-	text-align: center;
+	padding: 160rpx 48rpx;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	gap: 32rpx;
+}
+
+.empty-icon {
+	font-size: 140rpx;
+	opacity: 0.8;
+	animation: float 3s ease-in-out infinite;
+	filter: drop-shadow(0 8rpx 16rpx rgba(0, 0, 0, 0.1));
+	animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10rpx);
+	}
 }
 
 .empty-text {
-	font-size: 28rpx;
-	color: #999;
+	font-size: 32rpx;
+	color: #909399;
+	font-weight: 600;
+}
+
+.empty-hint {
+	font-size: 26rpx;
+	color: #c0c4cc;
+	font-weight: 400;
 }
 
 /* 响应式调整 */

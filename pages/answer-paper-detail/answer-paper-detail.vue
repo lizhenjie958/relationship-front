@@ -62,6 +62,7 @@
 import QuestionInfo from '@/components/QuestionInfo.vue';
 import { request } from '@/utils/request.js';
 import { getExamPaperDetail } from '@/api/examPaperApi.js';
+import { queryAnswerPaperDetail, completeAnswer } from '@/api/answerPaperApi.js';
 	
 	// 接收外部传入的答题记录ID参数
 	const props = defineProps({
@@ -155,11 +156,7 @@ const handleSubmitAnswers = async (answers) => {
 		};
 		
 		// 调用提交答案API
-		const response = await request({
-			url: '/answerPaper/completeAnswer',
-			method: 'POST',
-			data: requestData
-		});
+		const response = await completeAnswer(requestData);
 		
 		if (response.code === 200) {
 			// 获取得分
@@ -227,12 +224,8 @@ const fetchAnswerRecordData = async (recordId) => {
 		});
 		
 		// 调用答卷详情API
-		const response = await request({
-			url: '/answerPaper/queryDetail',
-			method: 'POST',
-			data: {
-				id: recordId
-			}
+		const response = await queryAnswerPaperDetail({
+			id: recordId
 		});
 		
 		if (response.code === 200) {

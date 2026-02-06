@@ -39,7 +39,7 @@
 <script setup>
 	import { ref, onMounted } from 'vue';
 import QuestionInfo from '@/components/QuestionInfo.vue';
-import { getExamPaperDetail } from '@/api/examPaperApi.js';
+import { getExamPaperDetail, claimExamPaper } from '@/api/examPaperApi.js';
 import { addShareRecord } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
 	
@@ -157,12 +157,8 @@ onLoad((options) => {
 const handleClaim = async () => {
 	try {
 		// 调用认领API
-		const response = await request({
-			url: '/examPaper/claim',
-			method: 'POST',
-			data: {
-				id: paperId.value
-			}
+		const response = await claimExamPaper({
+			id: paperId.value
 		});
 		
 		if (response.code === 200) {

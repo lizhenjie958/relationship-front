@@ -276,6 +276,12 @@ const onRefresh = async () => {
 	await queryPage();
 	// 刷新完成，隐藏loading
 	refresherTriggered.value = false;
+	// 显示刷新成功提示
+	uni.showToast({
+		title: '刷新成功',
+		icon: 'success',
+		duration: 1500
+	});
 };
 
 // 下拉过程事件处理（可选）
@@ -295,9 +301,12 @@ const onRefresherPulling = () => {
 </script>
 
 <style lang="scss" scoped>
+	// 导入主题变量
+	@import '@/styles/theme.scss';
+	
 	.relationship-list {
-		padding: 20rpx;
-		background-color: #f5f7fa;
+		padding: 24rpx;
+		background: linear-gradient(180deg, #f0f5ff 0%, #f5f7fa 100%);
 		min-height: 100vh;
 	}
 
@@ -307,7 +316,7 @@ const onRefresherPulling = () => {
 	
 	/* 加载状态 */
 	.loading {
-		padding: 100rpx 0;
+		padding: 120rpx 0;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -316,56 +325,67 @@ const onRefresherPulling = () => {
 	}
 	
 	.loading-spinner {
-		width: 60rpx;
-		height: 60rpx;
-		border: 4rpx solid #e9ecef;
-		border-top-color: #1890ff;
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-	}
-	
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
+		@include loading-spinner(64rpx, $primary);
 	}
 	
 	.loading-text {
-		font-size: 28rpx;
-		color: #909399;
+		font-size: $font-md;
+		color: $text-tertiary;
 		font-weight: 500;
+		letter-spacing: 2rpx;
 	}
 	
 	/* 表格容器 */
 	.table-body {
-		
+		padding: 4rpx;
 	}
 	
 	.table-row {
 		display: flex;
 		align-items: center;
-		background-color: #fff;
-		border-radius: 8rpx;
-		margin-bottom: 20rpx;
-		padding: 24rpx;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
-		transition: all 0.2s ease;
+		background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+		border-radius: $radius-lg;
+		margin-bottom: 24rpx;
+		padding: 28rpx;
+		box-shadow: $shadow-md;
+		transition: all $transition-normal;
+		border: 2rpx solid rgba(24, 144, 255, 0.05);
+		position: relative;
+		overflow: hidden;
+		
+		&::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 0;
+			bottom: 0;
+			width: 6rpx;
+			background: linear-gradient(180deg, $primary 0%, $primary-light 100%);
+			border-radius: $radius-lg 0 0 $radius-lg;
+			opacity: 0;
+			transition: opacity $transition-normal;
+		}
 	}
 	
-	.table-row:hover {
-		background-color: #f8f9fa;
-		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.12);
+	.table-row:active {
+		background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+		box-shadow: $shadow-lg;
+		transform: translateY(-2rpx) scale(0.995);
+		
+		&::before {
+			opacity: 1;
+		}
 	}
 	
 	/* 表格单元格 */
 	.table-cell {
-		padding: 0 20rpx;
+		padding: 0 16rpx;
 		display: flex;
 		align-items: center;
 	}
 	
 	.avatar-cell {
-		width: 80rpx;
+		width: 96rpx;
 		white-space: nowrap;
 		padding-left: 0;
 	}
@@ -377,7 +397,8 @@ const onRefresherPulling = () => {
 		flex-direction: column;
 		align-items: flex-start;
 		justify-content: center;
-		gap: 8rpx;
+		gap: 12rpx;
+		padding-left: 8rpx;
 	}
 	
 	.detail-cell {
@@ -387,100 +408,132 @@ const onRefresherPulling = () => {
 	
 	/* 名称样式 */
 	.name {
-		font-size: 32rpx;
-		font-weight: 500;
-		color: #2c3e50;
+		font-size: $font-lg;
+		font-weight: 600;
+		color: $text-primary;
+		letter-spacing: 1rpx;
 	}
 	
 	/* 头像样式 */
 	.image {
-		width: 80rpx;
-		height: 80rpx;
+		width: 88rpx;
+		height: 88rpx;
 		border-radius: 50%;
 		object-fit: cover;
-		border: 2rpx solid #e9ecef;
+		border: 4rpx solid #fff;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		transition: all $transition-normal;
+	}
+	
+	.table-row:active .image {
+		transform: scale(1.05);
+		box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.15);
 	}
 	
 	/* 无头像样式 */
 	.no-avatar {
-		width: 80rpx;
-		height: 80rpx;
+		width: 88rpx;
+		height: 88rpx;
 		border-radius: 50%;
-		background-color: #f0f2f5;
+		background: linear-gradient(135deg, #f0f2f5 0%, #e8eaf0 100%);
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		border: 4rpx solid #fff;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
 	}
 	
 	.avatar-icon {
-		font-size: 40rpx;
+		font-size: 44rpx;
+		opacity: 0.7;
 	}
 	
 	/* 备注样式 */
 	.remark {
-		font-size: 24rpx;
-		color: #666;
-		line-height: 1.4;
+		font-size: $font-sm;
+		color: $text-tertiary;
+		line-height: 1.5;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		max-width: 100%;
+		background: linear-gradient(90deg, $text-tertiary 0%, $text-quaternary 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 	}
 	
 	/* 试题按钮样式 */
 	.question-button {
-		padding: 10rpx 20rpx;
-		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		padding: 14rpx 28rpx;
+		background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
 		color: #fff;
 		border: none;
-		border-radius: 8rpx;
-		font-size: 22rpx;
-		font-weight: 500;
-		transition: all 0.3s ease;
-		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.25);
-	}
-
-	.question-button:hover {
-		background: linear-gradient(135deg, #40a9ff 0%, #69c0ff 100%);
-		transform: translateY(-1rpx);
-		box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.35);
+		border-radius: $radius-full;
+		font-size: $font-sm;
+		font-weight: 600;
+		transition: all $transition-normal;
+		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.3);
+		letter-spacing: 2rpx;
+		position: relative;
+		overflow: hidden;
+		
+		&::after {
+			content: '';
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			width: 0;
+			height: 0;
+			background: rgba(255, 255, 255, 0.3);
+			border-radius: 50%;
+			transform: translate(-50%, -50%);
+			transition: width 0.4s ease, height 0.4s ease;
+		}
 	}
 
 	.question-button:active {
-		transform: translateY(0);
-		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.25);
+		transform: scale(0.95);
+		box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.2);
+		
+		&::after {
+			width: 200rpx;
+			height: 200rpx;
+		}
 	}
 	
 	/* 空状态样式 */
 	.empty-state {
-		padding: 120rpx 40rpx;
+		padding: 160rpx 48rpx;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		gap: 24rpx;
+		gap: 32rpx;
 	}
 	
 	.empty-icon {
-		font-size: 120rpx;
-		opacity: 0.6;
+		font-size: 140rpx;
+		opacity: 0.8;
 		animation: float 3s ease-in-out infinite;
+		filter: drop-shadow(0 8rpx 16rpx rgba(0, 0, 0, 0.1));
 	}
 	
 	@keyframes float {
 		0%, 100% {
-			transform: translateY(0);
+			transform: translateY(0) rotate(0deg);
 		}
 		50% {
-			transform: translateY(-10rpx);
+			transform: translateY(-16rpx) rotate(3deg);
 		}
 	}
 	
 	.empty-text {
-		font-size: 32rpx;
-		color: #909399;
+		font-size: $font-xl;
+		color: $text-secondary;
+		font-weight: 600;
 		font-weight: 600;
 	}
 	

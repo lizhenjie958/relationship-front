@@ -11,23 +11,23 @@
 						<image v-if="isMember" :src="'/static/images/member.png'" class="member-badge" />
 					</view>
 					<template v-if="!isEditing">
-						<view class="user-name-container" @click="startEditing">
-							<text class="user-name">{{ userName }}</text>
-							<uni-icons type="compose" size="24rpx" color="#999" class="edit-icon" />
-						</view>
-					</template>
-					<template v-else>
-						<view class="edit-container">
-							<input 
-								v-model="editedName" 
-								class="edit-input" 
-								@blur="saveUserName"
-								@keyup.enter="saveUserName"
-								@keyup.esc="cancelEditing"
-								autofocus
-							/>
-						</view>
-					</template>
+					<view class="user-name-container" @click="startEditing">
+						<text class="user-name">{{ userName }}</text>
+						<uni-icons type="compose" size="24rpx" color="#999" class="edit-icon" />
+					</view>
+				</template>
+				<template v-else>
+					<view class="edit-container">
+						<input 
+							v-model="editedName" 
+							class="edit-input" 
+							@keyup.enter="saveUserName"
+							@keyup.esc="cancelEditing"
+							autofocus
+						/>
+						<button class="save-btn" @click="saveUserName">保存</button>
+					</view>
+				</template>
 				</view>
 			</view>
 		</view>
@@ -105,6 +105,8 @@
 	import { ref, onMounted, computed } from 'vue';
 	import { getCurrentUser, getUserId } from '@/utils/auth.js';
 	import { request } from '@/utils/request.js';
+	import { uploadFile } from '@/utils/upload.js';
+	import { updateUser } from '@/api/userApi.js';
 	
 	// 是否为会员
 	const isMember = ref(false); // 默认非会员
@@ -193,19 +195,10 @@
 			},
 			fail: (err) => {
 				console.error('打开客服失败:', err);
-				// 失败时显示备用方案
-				uni.showModal({
-					title: '联系客服',
-					content: '客服热线：400-123-4567\n工作时间：9:00-18:00',
-					confirmText: '拨打电话',
-					cancelText: '取消',
-					success: (res) => {
-						if (res.confirm) {
-							uni.makePhoneCall({
-								phoneNumber: '4001234567'
-							});
-						}
-					}
+				// 失败时提示用户
+				uni.showToast({
+					title: '客服功能暂不可用',
+					icon: 'none'
 				});
 			}
 		});
@@ -234,18 +227,28 @@
 	};
 	
 	// 保存用户名
-	const saveUserName = () => {
-		if (editedName.value.trim()) {
-			userName.value = editedName.value.trim();
-			isEditing.value = false;
-			// 触发编辑完成事件
-			onUserNameUpdated(userName.value);
-		} else {
+	const saveUserName = async () => {
+		const trimmedName = editedName.value.trim();
+		if (!trimmedName) {
 			uni.showToast({
 				title: '用户名不能为空',
 				icon: 'none'
 			});
+			return;
 		}
+		
+		// 判断前后是否变动，未变动则不触发接口
+		if (trimmedName === userName.value) {
+			isEditing.value = false;
+			return;
+		}
+		
+		// 更新用户名
+		userName.value = trimmedName;
+		isEditing.value = false;
+		
+		// 调用更新接口
+		await onUserNameUpdated(userName.value);
 	};
 	
 	// 取消编辑
@@ -261,16 +264,20 @@
 			sourceType: ['album', 'camera'],
 			success: async (res) => {
 				const tempFilePaths = res.tempFilePaths;
-				// 这里可以上传图片到服务器，获取头像地址
-				// 暂时使用本地路径作为示例
-				const avatarUrl = tempFilePaths[0];
-				// 更新头像
-				avatar.value = avatarUrl;
-				// 调用更新用户接口
-				await updateUserInfo({
-					username: userName.value,
-					avatar: avatarUrl
-				});
+				const tempFilePath = tempFilePaths[0];
+				
+				// 使用 TOS 上传工具类上传图片
+				const uploadResult = await uploadFile(tempFilePath);
+				
+				if (uploadResult && uploadResult.fullImageUrl) {
+					// 更新头像显示
+					avatar.value = uploadResult.fullImageUrl;
+					// 调用更新用户接口保存头像 URL
+					await updateUserInfo({
+						username: userName.value,
+						avatar: uploadResult.fullImageUrl
+					});
+				}
 			},
 			fail: (err) => {
 				console.error('选择头像失败:', err);
@@ -281,11 +288,7 @@
 	// 更新用户信息
 	const updateUserInfo = async (userData) => {
 		try {
-			const response = await request({
-				url: '/user/updateUser',
-				method: 'POST',
-				data: userData
-			});
+			const response = await updateUser(userData);
 			
 			if (response.code === 200) {
 				uni.showToast({
@@ -441,10 +444,13 @@
 	/* 编辑功能样式 */
 	.edit-container {
 		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
 	}
 
 	.edit-input {
-		width: 100%;
+		flex: 1;
 		padding: 12rpx 16rpx;
 		border: 2rpx solid #1890ff;
 		border-radius: 8rpx;
@@ -452,6 +458,26 @@
 		font-weight: 600;
 		color: #2c3e50;
 		background-color: rgba(255, 255, 255, 0.8);
+	}
+
+	/* 保存按钮样式 */
+	.save-btn {
+		padding: 12rpx 24rpx;
+		background-color: #1890ff;
+		color: #fff;
+		border: none;
+		border-radius: 8rpx;
+		font-size: 28rpx;
+		font-weight: 600;
+		transition: all 0.3s ease;
+	}
+
+	.save-btn:hover {
+		background-color: #40a9ff;
+	}
+
+	.save-btn:active {
+		background-color: #096dd9;
 	}
 	
 	/* 功能列表 */
