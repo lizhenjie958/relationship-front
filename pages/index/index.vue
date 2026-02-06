@@ -100,48 +100,39 @@
 			</view>
 		</view>
 
-		<!-- 未完成答题记录 -->
+		<!-- 快速开始区域 -->
 		<view class="share-container">
-			<!-- 未完成答题提示 -->
-			<view class="unfinished-tip" v-if="latestAnswering">
-				<view class="tip-icon">!</view>
-				<view class="tip-content">
-					<text class="tip-title">未完成答题</text>
-					<text class="tip-desc">您有1份试卷尚未完成，请及时作答</text>
-				</view>
-			</view>
-			
-			<!-- 最近进行中的答题记录 -->
-			<view class="share-content" v-if="latestAnswering">
-				<view class="share-header">
-					<view class="share-col">
-						<text>试卷名称</text>
-					</view>
-					<view class="share-col">
-						<text>主角</text>
-					</view>
-					<view class="share-col">
-						<text>过期时间</text>
-					</view>
-				</view>
-				<view class="share-row" @click="continueAnswer(latestAnswering.id)">
-					<view class="share-col">
-						<text>{{ latestAnswering.examPaperName }}</text>
-					</view>
-					<view class="share-col">
-						<view class="protagonist-info">
-							<image 
-								:src="latestAnswering.protagonistInfoDTO.picUrl" 
-								class="protagonist-avatar" 
-								mode="aspectFill"
-							></image>
+				<view class="quick-actions">
+					<view class="quick-actions-header">
+						<view class="section-title">
+							<view class="title-icon orange">🚀</view>
+							<text class="quick-actions-title">快速开始</text>
 						</view>
 					</view>
-					<view class="share-col">
-						<text>{{ formatDateTime(latestAnswering.timeoutTime) }}</text>
+					<view class="quick-actions-grid">
+						<view class="quick-action-item" @click="navigateToExamList">
+							<view class="quick-action-icon exam-icon">
+								<text class="quick-action-emoji">📋</text>
+							</view>
+							<text class="quick-action-text">开始答题</text>
+							<text class="quick-action-desc">挑战今日试题</text>
+						</view>
+						<view class="quick-action-item" @click="navigateToCreateExam">
+							<view class="quick-action-icon create-icon">
+								<text class="quick-action-emoji">✏️</text>
+							</view>
+							<text class="quick-action-text">创建试卷</text>
+							<text class="quick-action-desc">制作专属试题</text>
+						</view>
+						<view class="quick-action-item" @click="navigateToHistory">
+							<view class="quick-action-icon history-icon">
+								<text class="quick-action-emoji">📚</text>
+							</view>
+							<text class="quick-action-text">答题记录</text>
+							<text class="quick-action-desc">查看历史成绩</text>
+						</view>
 					</view>
 				</view>
-			</view>
 		</view>
 
 	</view>
@@ -154,6 +145,7 @@ import { queryTargetPath } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
 import { queryCheckinCalendar, queryDataByDay } from '@/api/answerStatisticsApi.js';
 import { queryLatestAnswering } from '@/api/answerPaperApi.js';
+import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 
 	// 今日日期
 	const todayDate = ref('');
@@ -176,6 +168,8 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 	
 	// 日期选择
 	const selectedDate = ref('');
+	// 邀请人ID
+	const inviterId = ref('');
 
 	// 格式化日期
 	const formatDate = (date) => {
@@ -188,12 +182,16 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 	// 格式化日期时间为 YYYY-MM-DD HH:mm:ss 格式
 	const formatDateTime = (date) => {
 		if (!date) return '';
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		const day = String(date.getDate()).padStart(2, '0');
-		const hours = String(date.getHours()).padStart(2, '0');
-		const minutes = String(date.getMinutes()).padStart(2, '0');
-		const seconds = String(date.getSeconds()).padStart(2, '0');
+		// 如果传入的是字符串，先转换为 Date 对象
+		const dateObj = typeof date === 'string' ? new Date(date) : date;
+		// 检查是否为有效日期
+		if (isNaN(dateObj.getTime())) return '';
+		const year = dateObj.getFullYear();
+		const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+		const day = String(dateObj.getDate()).padStart(2, '0');
+		const hours = String(dateObj.getHours()).padStart(2, '0');
+		const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+		const seconds = String(dateObj.getSeconds()).padStart(2, '0');
 		return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	};
 
@@ -250,10 +248,29 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 			
 			if (response.code === 200 && response.data) {
 				latestAnswering.value = response.data;
+				// 发现有未完成的答题，弹窗提示
+				showContinueAnswerDialog(response.data);
 			}
 		} catch (error) {
 			console.error('获取最近进行中的答题记录失败:', error);
 		}
+	};
+
+	// 显示继续答题弹窗
+	const showContinueAnswerDialog = (answeringData) => {
+		uni.showModal({
+			title: '未完成的答题',
+			content: `您有一份 "${answeringData.examPaperName}" 试卷尚未完成，是否继续答题？`,
+			confirmText: '继续答题',
+			cancelText: '稍后再说',
+			success: (res) => {
+				if (res.confirm) {
+					// 用户点击继续答题，跳转到答题页面
+					continueAnswer(answeringData.id);
+				}
+				// 用户点击取消或稍后再说，关闭弹窗，不做任何操作
+			}
+		});
 	};
 
 	// 获取答题统计数据
@@ -263,19 +280,29 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 			const targetDate = dateStr ? new Date(dateStr) : new Date();
 			targetDate.setHours(0, 0, 0, 0);
 			const statisticsDate = formatDate(targetDate);
-			
+						
 			const response = await queryDataByDay({
 				statisticsDate: statisticsDate
 			});
-			
+						
 			if (response.code === 200 && response.data) {
 				const data = response.data;
-				answerCnt.value = data.answerCnt || 0;
-				answerMaxScore.value = data.answerMaxScore || 0;
-				answerMaxScoreRank.value = data.answerMaxScoreRank || 0;
-				examCnt.value = data.examCnt || 0;
-				examCntRank.value = data.examCntRank || 0;
-				hotExamPaperId.value = data.hotExamPaperId || null;
+				console.log('统计数据:', data);
+				answerCnt.value = data.answerCnt ?? 0;
+				answerMaxScore.value = data.answerMaxScore ?? 0;
+				answerMaxScoreRank.value = data.answerMaxScoreRank ?? 0;
+				examCnt.value = data.examCnt ?? 0;
+				examCntRank.value = data.examCntRank ?? 0;
+				hotExamPaperId.value = data.hotExamPaperId ?? null;
+			} else {
+				// 接口返回成功但没有数据，重置统计值
+				console.log('接口返回无数据，重置统计值');
+				answerCnt.value = 0;
+				answerMaxScore.value = 0;
+				answerMaxScoreRank.value = 0;
+				examCnt.value = 0;
+				examCntRank.value = 0;
+				hotExamPaperId.value = null;
 			}
 		} catch (error) {
 			console.error('获取答题统计数据失败:', error);
@@ -336,7 +363,39 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 		if (options.shareCode) {
 			handleShareCode(options.shareCode);
 		}
+		// 解析邀请人ID
+		if (options.inviterId) {
+			inviterId.value = options.inviterId;
+			console.log('收到邀请人ID:', inviterId.value);
+		}
+		// 检查登录状态，未登录则自动登录（携带邀请人ID）
+		checkAndLogin();
 	});
+
+	// 检查登录状态并执行登录
+	const checkAndLogin = async () => {
+		// 如果已登录，直接返回
+		if (isLoggedIn()) {
+			console.log('用户已登录');
+			return;
+		}
+		// 未登录，执行微信登录
+		try {
+			console.log('用户未登录，开始自动登录');
+			await loginByWechat(inviterId.value);
+			console.log('自动登录成功');
+			// 登录成功后刷新页面数据
+			fetchCheckinCalendar();
+			fetchLatestAnswering();
+			fetchTodayStatistics();
+		} catch (error) {
+			console.error('自动登录失败:', error);
+			uni.showToast({
+				title: '登录失败，请重试',
+				icon: 'none'
+			});
+		}
+	};
 
 	// 页面加载时初始化
 	onMounted(() => {
@@ -345,18 +404,42 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 		todayDate.value = formatDate(today);
 		// 初始化选中的日期为今日
 		selectedDate.value = formatDate(today);
-		// 获取签到日历数据
-		fetchCheckinCalendar();
-		// 获取最近进行中的答题记录
-		fetchLatestAnswering();
-		// 获取今日答题统计数据
-		fetchTodayStatistics();
+		// 如果已登录，直接加载数据；未登录则在登录成功后加载
+		if (isLoggedIn()) {
+			// 获取签到日历数据
+			fetchCheckinCalendar();
+			// 获取最近进行中的答题记录
+			fetchLatestAnswering();
+			// 获取今日答题统计数据
+			fetchTodayStatistics();
+		}
 	});
 
 	// 继续答题
 	const continueAnswer = (recordId) => {
 		uni.navigateTo({
 			url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
+		});
+	};
+
+	// 跳转到试卷列表
+	const navigateToExamList = () => {
+		uni.navigateTo({
+			url: '/pages/exam-paper-list/exam-paper-list'
+		});
+	};
+
+	// 跳转到创建试卷
+	const navigateToCreateExam = () => {
+		uni.navigateTo({
+			url: '/pages/create-exam-paper/create-exam-paper'
+		});
+	};
+
+	// 跳转到答题记录
+	const navigateToHistory = () => {
+		uni.navigateTo({
+			url: '/pages/answer-paper-list/answer-paper-list'
 		});
 	};
 
@@ -600,8 +683,12 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 	}
 
 	.title-icon.purple {
-		background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
-	}
+	background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
+}
+
+.title-icon.orange {
+	background: linear-gradient(135deg, #fa8c16 0%, #ffc53d 100%);
+}
 
 	/* 出题者视角统计容器 */
 	.creator-stats-container {
@@ -779,6 +866,103 @@ import { queryLatestAnswering } from '@/api/answerPaperApi.js';
 	.share-content {
 		border-top: 2rpx solid #f0f0f0;
 		padding-top: 20rpx;
+	}
+
+	/* 快捷入口区域 */
+	.quick-actions {
+		padding: 0;
+	}
+
+	.quick-actions-header {
+		margin-bottom: 24rpx;
+		padding-bottom: 16rpx;
+		border-bottom: 2rpx solid #f0f0f0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.quick-actions-title {
+		font-size: 28rpx;
+		font-weight: bold;
+		color: #333333;
+		display: block;
+		position: relative;
+		padding-left: 16rpx;
+	}
+
+	.quick-actions-title::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		width: 6rpx;
+		height: 24rpx;
+		background-color: #fa8c16;
+		border-radius: 3rpx;
+	}
+
+	.quick-actions-grid {
+		display: flex;
+		justify-content: space-between;
+		gap: 20rpx;
+	}
+
+	.quick-action-item {
+		flex: 1;
+		background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+		border-radius: 16rpx;
+		padding: 28rpx 16rpx;
+		text-align: center;
+		transition: all 0.3s ease;
+		border: 2rpx solid #f0f0f0;
+		cursor: pointer;
+	}
+
+	.quick-action-item:active {
+		transform: scale(0.98);
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.quick-action-icon {
+		width: 80rpx;
+		height: 80rpx;
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 16rpx;
+	}
+
+	.exam-icon {
+		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+	}
+
+	.create-icon {
+		background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+	}
+
+	.history-icon {
+		background: linear-gradient(135deg, #722ed1 0%, #b37feb 100%);
+	}
+
+	.quick-action-emoji {
+		font-size: 40rpx;
+	}
+
+	.quick-action-text {
+		display: block;
+		font-size: 28rpx;
+		font-weight: 600;
+		color: #333333;
+		margin-bottom: 8rpx;
+	}
+
+	.quick-action-desc {
+		display: block;
+		font-size: 22rpx;
+		color: #999999;
 	}
 
 	.share-header {

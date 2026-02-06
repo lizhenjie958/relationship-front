@@ -63,17 +63,20 @@
 			</view>
 			
 			<!-- 联系客服 -->
-			<view class="function-item" @click="contactService">
+			<view class="function-item contact-item">
 				<view class="function-icon service-icon">
-					<text class="icon-text">💬</text>
+					<uni-icons type="weixin" size="40rpx" color="#28b389"></uni-icons>
 				</view>
 				<view class="function-info">
 					<text class="function-title">联系客服</text>
 					<text class="function-desc">获取帮助和支持</text>
 				</view>
 				<view class="function-arrow">
-					<text class="arrow-text">→</text>
+					<uni-icons type="right" size="30rpx" color="#aaa"></uni-icons>
 				</view>
+				<!-- #ifdef MP -->
+				<button class="contact-btn" open-type="contact"></button>
+				<!-- #endif -->
 			</view>
 		</view>
 		
@@ -189,6 +192,7 @@
 		// 使用uni-app的API打开微信小程序客服
 		uni.openCustomerServiceChat({
 			corpId: '', // 企业ID，非企业小程序不需要
+			url: 'https://work.weixin.qq.com/kfid/kfcxxxxx', // 客服链接，需要在微信小程序后台配置
 			showMessageCard: true,
 			success: (res) => {
 				console.log('打开客服成功:', res);
@@ -555,10 +559,32 @@
 	}
 	
 	.arrow-text {
-		font-size: 28rpx;
-	}
-	
-	/* 分享解锁会员权益 */
+	font-size: 28rpx;
+}
+
+/* 联系客服按钮 */
+.contact-item {
+	position: relative;
+}
+
+.contact-btn {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	margin: 0;
+	background: transparent;
+	border: none;
+	z-index: 10;
+}
+
+.contact-btn::after {
+	border: none;
+}
+
+/* 分享解锁会员权益 */
 	.share-section {
 		margin-bottom: 40rpx;
 	}

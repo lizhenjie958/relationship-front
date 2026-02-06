@@ -17,8 +17,18 @@
 					<text class="info-value">{{ createTime }}</text>
 				</view>
 				
-				<!-- 认领按钮 -->
-				<view class="claim-section">
+				<!-- 出题人操作按钮 -->
+				<view v-if="isExaminer" class="examiner-actions">
+					<button class="action-btn close-share-btn" @click="handleCloseShare">
+						<text class="btn-text">关闭分享</text>
+					</button>
+					<button class="action-btn view-share-btn" @click="handleViewShareRecord">
+						<text class="btn-text">分享记录</text>
+					</button>
+				</view>
+				
+				<!-- 认领按钮 - 非出题人显示 -->
+				<view v-else class="claim-section">
 					<button class="claim-btn" @click="handleClaim">
 						<text class="claim-btn-text">认领试卷</text>
 					</button>
@@ -32,6 +42,7 @@
 	:usageSource="'exam-paper-detail'"
 	:showAnswer="showAnswer"
 	:questions="questions"
+	:showSubmit="false"
 />
 	</view>
 </template>
@@ -42,6 +53,7 @@ import QuestionInfo from '@/components/QuestionInfo.vue';
 import { getExamPaperDetail, claimExamPaper } from '@/api/examPaperApi.js';
 import { addShareRecord } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
+import { getUserId } from '@/utils/auth.js';
 	
 	// 接收外部传入的试卷ID参数
 	const props = defineProps({
@@ -58,6 +70,10 @@ import { request } from '@/utils/request.js';
 	const protagonistName = ref('');
 	const createTime = ref('');
 	const creatorName = ref('系统管理员');
+	// 出题人ID
+	const examinerId = ref('');
+	// 当前用户是否为出题人
+	const isExaminer = ref(false);
 	// 题目数据
 	const questions = ref([]);
 	// 是否展示答案
@@ -88,9 +104,19 @@ import { request } from '@/utils/request.js';
 				paperName.value = data.name;
 				protagonistName.value = data.protagonistInfoDTO.protagonist;
 				createTime.value = data.createTime;
+				// 获取出题人ID
+				examinerId.value = data.examinerId || '';
+				// 判断当前用户是否为出题人
+				const currentUserId = getUserId();
+				isExaminer.value = examinerId.value && examinerId.value === currentUserId;
+				// 如果是出题人，默认展示答案
+				if (isExaminer.value) {
+					showAnswer.value = true;
+				}
 				// 更新题目数据
 				questions.value = data.questionDTOList;
 				console.log('Fetched questions:', questions.value);
+				console.log('Current user is examiner:', isExaminer.value);
 			} else {
 				uni.showToast({
 					title: '获取试卷详情失败',
@@ -152,6 +178,45 @@ onLoad((options) => {
 		showAnswer.value = true;
 	}
 });
+
+// 关闭分享
+const handleCloseShare = async () => {
+	uni.showModal({
+		title: '确认关闭分享',
+		content: '关闭分享后，其他人将无法通过分享链接访问此试卷，是否继续？',
+		confirmText: '关闭',
+		confirmColor: '#ff4d4f',
+		cancelText: '取消',
+		success: async (res) => {
+			if (res.confirm) {
+				try {
+					uni.showLoading({ title: '处理中...' });
+					// TODO: 调用关闭分享接口
+					// const response = await closeShare({ id: paperId.value });
+					uni.hideLoading();
+					uni.showToast({
+						title: '已关闭分享',
+						icon: 'success'
+					});
+				} catch (error) {
+					uni.hideLoading();
+					console.error('关闭分享失败:', error);
+					uni.showToast({
+						title: '关闭失败，请重试',
+						icon: 'none'
+					});
+				}
+			}
+		}
+	});
+};
+
+// 查看分享记录
+const handleViewShareRecord = () => {
+	uni.navigateTo({
+		url: `/pages/share-record/share-record?paperId=${paperId.value}`
+	});
+};
 
 // 认领试卷
 const handleClaim = async () => {
@@ -304,6 +369,50 @@ onMounted(async () => {
 	.claim-btn-text {
 		color: #fff;
 		font-size: 32rpx;
+		font-weight: 600;
+	}
+
+	/* 出题人操作按钮区域 */
+	.examiner-actions {
+		margin-top: 24rpx;
+		padding-top: 24rpx;
+		border-top: 2rpx solid #f1f3f5;
+		display: flex;
+		gap: 20rpx;
+	}
+
+	.action-btn {
+		flex: 1;
+		height: 80rpx;
+		border: none;
+		border-radius: 12rpx;
+		font-size: 28rpx;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.3s ease;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+	}
+
+	.close-share-btn {
+		background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+		color: #fff;
+	}
+
+	.view-share-btn {
+		background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+		color: #fff;
+	}
+
+	.action-btn:active {
+		transform: scale(0.98);
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+	}
+
+	.btn-text {
+		color: #fff;
+		font-size: 28rpx;
 		font-weight: 600;
 	}
 	

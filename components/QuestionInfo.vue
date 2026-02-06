@@ -57,8 +57,8 @@
 							</view>
 						</view>
 						
-						<!-- 答案区域 -->
-						<view class="answer-section">
+						<!-- 答案区域 - 仅在showAnswer为true时显示 -->
+						<view v-if="showAnswer" class="answer-section">
 							<view class="answer-header">
 								<text class="answer-title">答案</text>
 							</view>
@@ -67,8 +67,8 @@
 							</view>
 						</view>
 						
-						<!-- 提交按钮 -->
-						<view v-if="canAnswer() && index === questions.length - 1" class="submit-section">
+						<!-- 提交按钮 - 仅在showSubmit为true时显示 -->
+						<view v-if="showSubmit && canAnswer() && index === questions.length - 1" class="submit-section">
 							<button class="submit-btn" @click="submitAnswers">提交答案</button>
 						</view>
 					</view>
@@ -125,6 +125,11 @@
 		questions: {
 			type: Array,
 			default: () => []
+		},
+		// 是否显示提交按钮
+		showSubmit: {
+			type: Boolean,
+			default: true
 		}
 	});
 

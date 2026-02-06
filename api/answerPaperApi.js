@@ -35,3 +35,12 @@ export function queryLatestAnswering(data = {}) {
     data
   });
 }
+
+// 放弃作答
+export function giveUpAnswer(data = {}) {
+  return request({
+    url: '/answerPaper/giveUp',
+    method: 'POST',
+    data
+  });
+}

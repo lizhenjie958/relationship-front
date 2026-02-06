@@ -13,10 +13,10 @@
 					<text class="info-label">答题时间：</text>
 					<text class="info-value">{{ answerTime }}</text>
 				</view>
-				<view class="info-item">
-					<text class="info-label">得分：</text>
-					<text class="info-value score">{{ score }}分</text>
-				</view>
+				<view class="info-item" v-if="answerStatus === 'completed'">
+				<text class="info-label">得分：</text>
+				<text class="info-value score">{{ score }}分</text>
+			</view>
 				<view class="info-item">
 					<text class="info-label">状态：</text>
 					<text class="info-value" :class="statusClass">{{ statusText }}</text>
@@ -31,14 +31,21 @@
 				class="action-btn retry-btn"
 				@click="retryAnswer"
 			>
-				重新答题
+				重新领取
 			</button>
 			<button 
-				v-if="answerStatus !== 'ongoing'" 
+				v-if="answerStatus !== 'ongoing' && !showAnswer" 
 				class="action-btn show-answer-btn"
 				@click="toggleShowAnswer"
 			>
-				{{ showAnswer ? '隐藏答案' : '展示答案' }}
+				查看答案
+			</button>
+			<button 
+				v-if="answerStatus === 'ongoing'" 
+				class="action-btn give-up-btn"
+				@click="giveUpAnswerHandler"
+			>
+				放弃作答
 			</button>
 		</view>
 		
@@ -62,7 +69,8 @@
 import QuestionInfo from '@/components/QuestionInfo.vue';
 import { request } from '@/utils/request.js';
 import { getExamPaperDetail } from '@/api/examPaperApi.js';
-import { queryAnswerPaperDetail, completeAnswer } from '@/api/answerPaperApi.js';
+import { queryAnswerPaperDetail, completeAnswer, giveUpAnswer } from '@/api/answerPaperApi.js';
+import { claimExamPaper } from '@/api/examPaperApi.js';
 	
 	// 接收外部传入的答题记录ID参数
 	const props = defineProps({
@@ -117,12 +125,116 @@ const statusClassMap = {
 		showAnswer.value = !showAnswer.value;
 	};
 
-	// 重新答题
-	const retryAnswer = () => {
-		// 实际项目中，这里会跳转到答题页面
-		uni.showToast({
-			title: '重新答题功能开发中',
-			icon: 'none'
+	// 重新领取
+	const retryAnswer = async () => {
+		if (!paperId.value) {
+			uni.showToast({
+				title: '试卷ID不能为空',
+				icon: 'none'
+			});
+			return;
+		}
+
+		try {
+			uni.showLoading({ title: '领取中...' });
+
+			const response = await claimExamPaper({
+				id: paperId.value
+			});
+
+			uni.hideLoading();
+
+			if (response.code === 200) {
+				uni.showToast({
+					title: '领取成功',
+					icon: 'success'
+				});
+				// 领取成功后跳转到新领取的答题详情页
+				if (response.data) {
+					setTimeout(() => {
+						uni.navigateTo({
+							url: `/pages/answer-paper-detail/answer-paper-detail?id=${response.data}`
+						});
+					}, 1500);
+				}
+			} else {
+				uni.showToast({
+					title: response.msg || '领取失败',
+					icon: 'none'
+				});
+			}
+		} catch (error) {
+			uni.hideLoading();
+			console.error('重新领取失败:', error);
+			uni.showToast({
+				title: '领取失败，请重试',
+				icon: 'none'
+			});
+		}
+	};
+
+	// 放弃作答
+	const giveUpAnswerHandler = async () => {
+		if (!recordId.value) {
+			uni.showToast({
+				title: '记录ID不能为空',
+				icon: 'none'
+			});
+			return;
+		}
+
+		uni.showModal({
+			title: '确认放弃',
+			content: '确定要放弃本次作答吗？',
+			confirmText: '放弃',
+			confirmColor: '#ff4d4f',
+			cancelText: '取消',
+			success: async (res) => {
+				if (res.confirm) {
+					try {
+						uni.showLoading({ title: '处理中...' });
+						
+						const response = await giveUpAnswer({
+							id: recordId.value
+						});
+						
+						uni.hideLoading();
+						
+						if (response.code === 200) {
+							uni.showToast({
+								title: '已放弃作答',
+								icon: 'success'
+							});
+						} else {
+							uni.showToast({
+								title: response.msg || '放弃失败',
+								icon: 'none'
+							});
+						}
+						
+						// 无论成功失败，都返回答卷列表页
+						setTimeout(() => {
+							uni.navigateTo({
+								url: '/pages/answer-paper-list/answer-paper-list'
+							});
+						}, 1500);
+					} catch (error) {
+						uni.hideLoading();
+						console.error('放弃作答失败:', error);
+						uni.showToast({
+							title: '放弃失败，请重试',
+							icon: 'none'
+						});
+						
+						// 失败后也返回答卷列表页
+						setTimeout(() => {
+							uni.navigateTo({
+								url: '/pages/answer-paper-list/answer-paper-list'
+							});
+						}, 1500);
+					}
+				}
+			}
 		});
 	};
 
@@ -388,6 +500,11 @@ const fetchExamPaperQuestions = async (paperId) => {
 
 	.show-answer-btn {
 		background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+		color: #fff;
+	}
+
+	.give-up-btn {
+		background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
 		color: #fff;
 	}
 

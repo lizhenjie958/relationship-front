@@ -25,7 +25,8 @@ export function clearToken() {
 
 // 获取用户ID
 export function getUserId() {
-  return uni.getStorageSync(USER_ID_KEY);
+  return 1;
+  // return uni.getStorageSync(USER_ID_KEY);
 }
 
 // 存储用户ID
@@ -39,8 +40,13 @@ export function isLoggedIn() {
 }
 
 // 微信登录
-export async function loginByWechat() {
+export async function loginByWechat(inviterId = null) {
+  let loadingShown = false;
   try {
+    // 显示加载中
+    uni.showLoading({ title: '登录中...', mask: true });
+    loadingShown = true;
+    
     // 1. 获取微信登录授权码
     const loginResult = await new Promise((resolve, reject) => {
       uni.login({
@@ -56,6 +62,12 @@ export async function loginByWechat() {
     
     const openIdAuthCode = loginResult.code;
     const data = { openIdAuthCode };
+    
+    // 如果有邀请人ID，添加到登录参数中
+    if (inviterId) {
+      data.inviterId = inviterId;
+    }
+    
     const timestamp = new Date().getTime();
     const signature = sign(data, timestamp);
     
@@ -93,6 +105,11 @@ export async function loginByWechat() {
     console.error('微信登录失败:', error);
     clearToken();
     throw error;
+  } finally {
+    // 确保隐藏加载中
+    if (loadingShown) {
+      uni.hideLoading();
+    }
   }
 }
 

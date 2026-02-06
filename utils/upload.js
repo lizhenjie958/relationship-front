@@ -31,9 +31,11 @@ export function parseResponse(response) {
 
 // 上传文件
 export async function uploadFile(tempFilePath) {
+	let loadingShown = false;
 	try {
 		// 显示加载提示
-		uni.showLoading({ title: '上传中...' });
+		uni.showLoading({ title: '上传中...', mask: true });
+		loadingShown = true;
 
 		// 1. 生成文件名
 		const fileName = generateFileName(tempFilePath);
@@ -130,17 +132,19 @@ export async function uploadFile(tempFilePath) {
 		uni.showToast({ title: `上传失败: ${error.message}`, icon: 'none' });
 		return null;
 	} finally {
-		uni.hideLoading();
+		if (loadingShown) {
+			uni.hideLoading();
+		}
 	}
 }
 
 // 上传文件（带进度监控）
 export function uploadWithProgress(tempFilePath, onProgress) {
 	return new Promise(async (resolve, reject) => {
+		let loadingShown = false;
+		let uploadTask = null;
+		
 		try {
-			// 显示加载提示
-			uni.showLoading({ title: '上传中...' });
-			
 			// 1. 生成文件名
 			const fileName = generateFileName(tempFilePath);
 			console.log('生成的文件名:', fileName);
@@ -204,7 +208,7 @@ export function uploadWithProgress(tempFilePath, onProgress) {
 			};
 			
 			// 4. 执行上传
-			const uploadTask = uni.uploadFile({
+			uploadTask = uni.uploadFile({
 				url: tosUploadUrl,
 				filePath: tempFilePath,
 				name: 'file',
@@ -212,8 +216,7 @@ export function uploadWithProgress(tempFilePath, onProgress) {
 				header: {
 					'Content-Type': 'multipart/form-data'
 				},
-				success: async (uploadRes) => {
-					uni.hideLoading();
+				success: (uploadRes) => {
 					console.log('上传结果:', uploadRes);
 					if (uploadRes.statusCode === 200 || uploadRes.statusCode === 204) {
 						// 上传成功
@@ -224,7 +227,6 @@ export function uploadWithProgress(tempFilePath, onProgress) {
 					}
 				},
 				fail: (err) => {
-					uni.hideLoading();
 					console.error('上传任务失败:', err);
 					reject(err);
 				}
@@ -236,11 +238,8 @@ export function uploadWithProgress(tempFilePath, onProgress) {
 				if (onProgress) {
 					onProgress(percent);
 				}
-				// 显示进度
-				uni.showLoading({ title: `上传中 ${percent}%` });
 			});
 		} catch (error) {
-			uni.hideLoading();
 			console.error('上传失败:', error);
 			uni.showToast({ title: `上传失败: ${error.message}`, icon: 'none' });
 			reject(error);

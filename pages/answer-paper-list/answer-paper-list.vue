@@ -78,7 +78,7 @@ import { queryAnswerPaperList } from '@/api/answerPaperApi.js';
 const tabs = [
 	{ label: '进行中', value: 'ongoing' },
 	{ label: '已完成', value: 'completed' },
-	{ label: '已过期', value: 'expired' }
+	{ label: '已超时/已放弃', value: 'expired' }
 ];
 
 // 当前激活的Tab
@@ -97,17 +97,22 @@ const refresherTriggered = ref(false);
 const fetchAnswers = async () => {
 	loading.value = true;
 	try {
-		// 根据当前tab确定answerStatus参数
-		let answerStatusMap = {
-			'ongoing': 1, // ANSWERING
-			'completed': 2, // COMPLETED
-			'expired': 4 // TIMED_OUT
-		};
+		// 根据当前tab确定请求参数
+		let requestParams = {};
+		
+		if (activeTab.value === 'ongoing') {
+			// 进行中
+			requestParams = { answerStatus: 1 }; // ANSWERING
+		} else if (activeTab.value === 'completed') {
+			// 已完成
+			requestParams = { answerStatus: 2 }; // COMPLETED
+		} else if (activeTab.value === 'expired') {
+			// 已超时/已放弃 - 使用answerStatusList查询多个状态
+			requestParams = { answerStatusList: [3, 4] }; // GIVEN_UP(3), TIMED_OUT(4)
+		}
 		
 		// 调用API
-		const response = await queryAnswerPaperList({
-			answerStatus: answerStatusMap[activeTab.value]
-		});
+		const response = await queryAnswerPaperList(requestParams);
 		
 		if (response.code === 200) {
 			// 处理返回数据，映射为组件需要的格式
