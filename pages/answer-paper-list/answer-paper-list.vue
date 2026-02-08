@@ -1,12 +1,11 @@
 <template>
-	<view class="answer-list-container" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
-		
+	<view class="answer-list-container">
 		<!-- Tab切换 -->
 		<view class="tab-container">
-			<view 
-				v-for="tab in tabs" 
-				:key="tab.value" 
-				class="tab-item" 
+			<view
+				v-for="tab in tabs"
+				:key="tab.value"
+				class="tab-item"
 				:class="{ active: activeTab === tab.value }"
 				@click="switchTab(tab.value)"
 			>
@@ -21,10 +20,10 @@
 				<view class="loading-spinner"></view>
 				<text class="loading-text">加载中...</text>
 			</view>
-			
+
 			<template v-else>
-			<!-- 表格头部 -->
-			<view class="table-header">
+				<!-- 表格头部 -->
+				<view class="table-header">
 					<view class="table-cell creator-cell">出题人</view>
 					<view class="table-cell protagonist-cell">主角</view>
 					<view class="table-cell answer-time-cell">答题时间</view>
@@ -34,9 +33,9 @@
 
 				<!-- 表格内容 -->
 				<view class="table-body">
-					<view 
-						v-for="item in filteredAnswers" 
-						:key="item.id" 
+					<view
+						v-for="item in filteredAnswers"
+						:key="item.id"
 						class="table-row"
 						@click="goToAnswerRecord(item.id)"
 					>
@@ -47,23 +46,23 @@
 							<text class="protagonist">{{ item.protagonist }}</text>
 						</view>
 						<view class="table-cell answer-time-cell">
-						<text class="answer-time">{{ item.answerTime }}</text>
-					</view>
-					<view class="table-cell complete-time-cell">
-						<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
-					</view>
-					<view v-if="activeTab === 'completed'" class="table-cell score-cell">
-						<text class="score">{{ item.score }}</text>
-					</view>
+							<text class="answer-time">{{ item.answerTime }}</text>
+						</view>
+						<view class="table-cell complete-time-cell">
+							<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
+						</view>
+						<view v-if="activeTab === 'completed'" class="table-cell score-cell">
+							<text class="score">{{ item.score }}</text>
+						</view>
 					</view>
 				</view>
 
-			<!-- 空状态 -->
-			<view v-if="filteredAnswers.length === 0" class="empty-state">
-				<view class="empty-icon">📭</view>
-				<text class="empty-text">暂无答题记录</text>
-				<text class="empty-hint">快去答题吧</text>
-			</view>
+				<!-- 空状态 -->
+				<view v-if="filteredAnswers.length === 0" class="empty-state">
+					<view class="empty-icon">📭</view>
+					<text class="empty-text">暂无答题记录</text>
+					<text class="empty-hint">快去答题吧</text>
+				</view>
 			</template>
 		</view>
 	</view>
@@ -71,6 +70,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { onPullDownRefresh } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { queryAnswerPaperList } from '@/api/answerPaperApi.js';
 
@@ -89,9 +89,6 @@ const answers = ref([]);
 
 // 加载状态
 const loading = ref(false);
-
-// 下拉刷新状态
-const refresherTriggered = ref(false);
 
 // 调用真实API获取答题记录
 const fetchAnswers = async () => {
@@ -161,28 +158,12 @@ const switchTab = async (tabValue) => {
 	await fetchAnswers();
 };
 
-// 下拉刷新事件处理
-const onRefresh = async () => {
-	// 开始刷新，显示loading
-	refresherTriggered.value = true;
-	// 重新获取答题记录
+// 页面下拉刷新
+onPullDownRefresh(async () => {
+	console.log('答题列表页面下拉刷新');
 	await fetchAnswers();
-	// 刷新完成，隐藏loading
-	refresherTriggered.value = false;
-	// 显示刷新成功提示
-	if (answers.value.length > 0) {
-		uni.showToast({
-			title: `已更新 ${answers.value.length} 条数据`,
-			icon: 'success',
-			duration: 1500
-		});
-	}
-};
-
-// 下拉过程事件处理（可选）
-const onRefresherPulling = () => {
-	// 可以在这里添加下拉过程中的动画或状态更新
-};
+	uni.stopPullDownRefresh();
+});
 
 // 跳转到试卷列表
 const goToQuestionList = () => {

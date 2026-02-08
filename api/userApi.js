@@ -8,3 +8,12 @@ export function updateUser(data = {}) {
     data
   });
 }
+
+// 维护邀请人
+export function maintainInviter(data = {}) {
+  return request({
+    url: '/user/maintainInviter',
+    method: 'POST',
+    data
+  });
+}

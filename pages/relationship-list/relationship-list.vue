@@ -1,5 +1,5 @@
 <template>
-	<view class="relationship-list" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
+	<view class="relationship-list">
 		<view class="relationship-list-table">
 			<view v-if="loading" class="loading">
 				<view class="loading-spinner"></view>
@@ -24,7 +24,7 @@
 						</view>
 					</view>
 				</view>
-				
+
 				<!-- 空状态 -->
 				<view v-else class="empty-state">
 					<view class="empty-icon">📭</view>
@@ -33,7 +33,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- 试卷名称输入弹窗 -->
 		<view v-if="showPaperNameDialog" class="dialog-overlay">
 			<view class="popup-container">
@@ -43,10 +43,10 @@
 				<view class="popup-content">
 					<view class="form-item">
 						<text class="form-label">试卷名称</text>
-						<input 
-							v-model="paperName" 
-							class="form-input" 
-							placeholder="请输入试卷名称（最多10个字）" 
+						<input
+							v-model="paperName"
+							class="form-input"
+							placeholder="请输入试卷名称（最多10个字）"
 							maxlength="10"
 						/>
 						<text class="char-count">{{ paperName.length }}/10</text>
@@ -58,7 +58,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- 生成试题弹窗 -->
 		<view v-if="generatingQuestion" class="dialog-overlay">
 			<view class="loading-container">
@@ -66,7 +66,7 @@
 				<text class="loading-text">生成试题中...</text>
 			</view>
 		</view>
-		
+
 		<!-- 生成完成弹窗 -->
 		<view v-if="showQuestionDialog" class="dialog-overlay">
 			<view class="popup-container">
@@ -83,7 +83,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- 浮动新增按钮 -->
 		<FloatingButton @click="navigateToAddRelation" />
 	</view>
@@ -91,10 +91,10 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-import { onReachBottom, onShow } from '@dcloudio/uni-app';
+import { onReachBottom, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { queryRelationshipList, generateExamPaper } from "@/api/relationApi.js";
 import FloatingButton from "@/components/FloatingButton.vue";
-	
+
 	// 数据状态
 	const protagonData = ref({
 		protagonList: [],
@@ -102,9 +102,6 @@ import FloatingButton from "@/components/FloatingButton.vue";
 	})
 	const reqParam ={pageNo:1,pageSize:15};
 	const loading = ref(false);
-
-	// 下拉刷新状态
-	const refresherTriggered = ref(false);
 
 	// 生成试题状态
 const showQuestionDialog = ref(false);
@@ -264,30 +261,18 @@ const confirmPaperName = async () => {
 		
 	});
 
-	// 下拉刷新事件处理
-const onRefresh = async () => {
-	// 开始刷新，显示loading
-	refresherTriggered.value = true;
-	// 重置页码
-	reqParam.pageNo = 1;
-	// 清空列表
-	protagonData.value.protagonList = [];
-	// 重新获取数据
-	await queryPage();
-	// 刷新完成，隐藏loading
-	refresherTriggered.value = false;
-	// 显示刷新成功提示
-	uni.showToast({
-		title: '刷新成功',
-		icon: 'success',
-		duration: 1500
+	// 页面下拉刷新
+	onPullDownRefresh(async () => {
+		console.log('关系列表页面下拉刷新');
+		// 重置页码
+		reqParam.pageNo = 1;
+		// 清空列表
+		protagonData.value.protagonList = [];
+		// 重新获取数据
+		await queryPage();
+		// 停止下拉刷新
+		uni.stopPullDownRefresh();
 	});
-};
-
-// 下拉过程事件处理（可选）
-const onRefresherPulling = () => {
-	// 可以在这里添加下拉过程中的动画或状态更新
-};
 
 // 页面显示时刷新数据
 	onShow(() => {

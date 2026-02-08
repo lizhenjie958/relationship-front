@@ -19,3 +19,13 @@ export function queryTargetPath(data = {}){
 export function addShareRecord(data = {}){
 	return request({url:"/shareRecord/addRecord",data, method: "POST"})
 }
+
+// 查询分享记录列表
+export function queryShareRecordList(data = {}){
+	return request({url:"/shareRecord/queryList",data, method: "POST"})
+}
+
+// 停止分享
+export function stopShare(data = {}){
+	return request({url:"/shareRecord/stopShare",data, method: "POST"})
+}

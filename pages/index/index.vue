@@ -1,13 +1,5 @@
 <template>
-	<view 
-		class="container"
-		@refresherrefresh="onRefresh"
-		@refresherpulling="onRefresherPulling"
-		:refresher-enabled="true"
-		:refresher-threshold="80"
-		:refresher-default-style="'default'"
-		:refresher-triggered="refresherTriggered"
-	>
+	<view class="container">
 		<!-- 页面头部 - 包含标题和日期选择 -->
 		<view class="page-header">
 			<view class="header-title-section">
@@ -83,14 +75,74 @@
 
 		<!-- 连续答题挑战 -->
 		<view class="challenge-container">
-			<!-- 提示信息 -->
-			<view class="tip-container">
-				<text class="tip-text">连续完成30天答题，可永久解锁会员权益</text>
+			<!-- 活动奖励说明 -->
+			<view v-if="activityData" class="activity-container">
+				<view class="activity-badge">限时活动</view>
+				<view class="activity-main">
+					<view class="activity-icon-wrap">
+						<text class="activity-emoji">🎁</text>
+					</view>
+					<view class="activity-info">
+						<text class="activity-name">答题签到送会员</text>
+						<view class="activity-reward">
+							<text class="reward-label">完成得</text>
+							<text class="reward-highlight">{{ activityData.reward }}{{ getRewardUnitText(activityData.rewardUnitType) }}会员</text>
+						</view>
+					</view>
+				</view>
+				<!-- 进度条（已参加时显示） -->
+				<view v-if="hasParticipated && participateRecord" class="activity-progress-detail">
+					<view class="progress-header">
+						<view class="progress-status">
+							<text class="status-badge" :class="{ 'completed': participateRecord.participateStatus === 2 }">
+								{{ getStatusText(participateRecord.participateStatus) }}
+							</text>
+							<text v-if="participateRecord.completeTime" class="complete-time">
+								完成于 {{ participateRecord.completeTime.split('T')[0] }}
+							</text>
+						</view>
+						<text class="progress-ratio">{{ participateRecord.currentIndicator }}/{{ activityData.threshold }}天</text>
+					</view>
+					<view class="progress-bar-container">
+						<view class="progress-bar-bg">
+							<view class="progress-bar-fill" :style="{ width: getProgressPercent() + '%' }"></view>
+						</view>
+						<text class="progress-percent">{{ getProgressPercent() }}%</text>
+					</view>
+				</view>
+
+				<!-- 活动信息（未参加或已参加都显示） -->
+				<view class="activity-progress">
+					<view class="progress-info">
+						<view class="progress-item">
+							<text class="progress-label">目标</text>
+							<text class="progress-value">{{ activityData.threshold }}天</text>
+						</view>
+						<view class="progress-divider"></view>
+						<view class="progress-item">
+							<text class="progress-label">时间</text>
+							<text class="progress-value">{{ activityData.startDate }} 至 {{ activityData.endDate }}</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 参加活动按钮（未参加时显示） -->
+				<view v-if="!hasParticipated" class="activity-action">
+					<button
+						class="participate-btn"
+						:disabled="participateLoading"
+						:class="{ 'loading': participateLoading }"
+						@click="handleParticipate"
+					>
+						<text v-if="participateLoading" class="btn-loading-text">参加中...</text>
+						<text v-else class="btn-text">立即参加</text>
+					</button>
+				</view>
 			</view>
 
 			<!-- 日历组件 -->
 			<view class="calendar-container">
-				<uni-calendar 
+				<uni-calendar
 					:insert="true"
 					start-date="2021-01-01"
 					end-date="2026-12-31"
@@ -102,50 +154,55 @@
 
 		<!-- 快速开始区域 -->
 		<view class="share-container">
-				<view class="quick-actions">
-					<view class="quick-actions-header">
-						<view class="section-title">
-							<view class="title-icon orange">🚀</view>
-							<text class="quick-actions-title">快速开始</text>
-						</view>
-					</view>
-					<view class="quick-actions-grid">
-						<view class="quick-action-item" @click="navigateToExamList">
-							<view class="quick-action-icon exam-icon">
-								<text class="quick-action-emoji">📋</text>
-							</view>
-							<text class="quick-action-text">开始答题</text>
-							<text class="quick-action-desc">挑战今日试题</text>
-						</view>
-						<view class="quick-action-item" @click="navigateToCreateExam">
-							<view class="quick-action-icon create-icon">
-								<text class="quick-action-emoji">✏️</text>
-							</view>
-							<text class="quick-action-text">创建试卷</text>
-							<text class="quick-action-desc">制作专属试题</text>
-						</view>
-						<view class="quick-action-item" @click="navigateToHistory">
-							<view class="quick-action-icon history-icon">
-								<text class="quick-action-emoji">📚</text>
-							</view>
-							<text class="quick-action-text">答题记录</text>
-							<text class="quick-action-desc">查看历史成绩</text>
-						</view>
+			<view class="quick-actions">
+				<view class="quick-actions-header">
+					<view class="section-title">
+						<view class="title-icon orange">🚀</view>
+						<text class="quick-actions-title">快速开始</text>
 					</view>
 				</view>
+				<view class="quick-actions-grid">
+					<view class="quick-action-item" @click="navigateToExamList">
+						<view class="quick-action-icon exam-icon">
+							<text class="quick-action-emoji">📋</text>
+						</view>
+						<text class="quick-action-text">开始答题</text>
+						<text class="quick-action-desc">挑战今日试题</text>
+					</view>
+					<view class="quick-action-item relation-item" @click="navigateToRelationManager">
+						<view class="quick-action-icon relation-icon">
+							<view class="relation-graphic">
+								<view class="relation-node node-left"></view>
+								<view class="relation-line"></view>
+								<view class="relation-node node-right"></view>
+							</view>
+						</view>
+						<text class="quick-action-text">创建关系</text>
+						<text class="quick-action-desc">创建人物关系</text>
+					</view>
+					<view class="quick-action-item" @click="navigateToHistory">
+						<view class="quick-action-icon history-icon">
+							<text class="quick-action-emoji">📚</text>
+						</view>
+						<text class="quick-action-text">答题记录</text>
+						<text class="quick-action-desc">查看历史成绩</text>
+					</view>
+				</view>
+			</view>
 		</view>
-
 	</view>
 </template>
 
 <script setup>
 	import { ref, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app';
 import { queryTargetPath } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
 import { queryCheckinCalendar, queryDataByDay } from '@/api/answerStatisticsApi.js';
 import { queryLatestAnswering } from '@/api/answerPaperApi.js';
-import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
+import { loginByWechat, isLoggedIn, getCurrentUser } from '@/utils/auth.js';
+import { maintainInviter } from '@/api/userApi.js';
+import { queryCurrentActivity, participateActivity, queryParticipateRecord } from '@/api/activityApi.js';
 
 	// 今日日期
 	const todayDate = ref('');
@@ -170,6 +227,18 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 	const selectedDate = ref('');
 	// 邀请人ID
 	const inviterId = ref('');
+	// 邀请码（从分享链接获取）
+	const inviteCodeFromShare = ref('');
+	// 活动数据
+	const activityData = ref(null);
+	// 活动ID
+	const activityId = ref(null);
+	// 是否已参加活动
+	const hasParticipated = ref(false);
+	// 参加活动加载状态
+	const participateLoading = ref(false);
+	// 参加记录数据
+	const participateRecord = ref(null);
 
 	// 格式化日期
 	const formatDate = (date) => {
@@ -316,6 +385,115 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		fetchTodayStatistics(selectedDate.value);
 	};
 
+	// 获取当前活动
+	const fetchCurrentActivity = async () => {
+		try {
+			const response = await queryCurrentActivity({
+				channelCode: 'jm6nm2'
+			});
+			console.log('活动数据:', response);
+			if (response.code === 200 && response.data) {
+				activityData.value = response.data;
+				activityId.value = response.data.id;
+				// 获取到活动ID后，查询参加记录
+				await fetchParticipateRecord();
+			}
+		} catch (error) {
+			console.error('获取活动数据失败:', error);
+		}
+	};
+
+	// 获取参加记录
+	const fetchParticipateRecord = async () => {
+		if (!activityId.value) return;
+		try {
+			const response = await queryParticipateRecord({
+				activityId: activityId.value
+			});
+			console.log('参加记录:', response);
+			if (response.code === 200 && response.data) {
+				participateRecord.value = response.data;
+				// 有参加记录则表示已参加
+				hasParticipated.value = true;
+			} else {
+				// 没有参加记录
+				participateRecord.value = null;
+				hasParticipated.value = false;
+			}
+		} catch (error) {
+			console.error('获取参加记录失败:', error);
+			participateRecord.value = null;
+			hasParticipated.value = false;
+		}
+	};
+
+	// 获取状态文本
+	const getStatusText = (status) => {
+		const statusMap = {
+			1: '进行中',
+			2: '已完成'
+		};
+		return statusMap[status] || '未知';
+	};
+
+	// 计算进度百分比
+	const getProgressPercent = () => {
+		if (!activityData.value || !participateRecord.value) return 0;
+		const threshold = activityData.value.threshold || 1;
+		const current = participateRecord.value.currentIndicator || 0;
+		return Math.min(Math.round((current / threshold) * 100), 100);
+	};
+
+	// 参加活动
+	const handleParticipate = async () => {
+		if (!activityId.value) {
+			uni.showToast({
+				title: '活动信息获取失败',
+				icon: 'none'
+			});
+			return;
+		}
+
+		participateLoading.value = true;
+		try {
+			const response = await participateActivity({
+				activityId: activityId.value
+			});
+			console.log('参加活动结果:', response);
+			if (response.code === 200) {
+				uni.showToast({
+					title: '参加成功',
+					icon: 'success'
+				});
+				// 参加成功后重新获取参加记录
+				await fetchParticipateRecord();
+			} else {
+				uni.showToast({
+					title: response.msg || '参加失败',
+					icon: 'none'
+				});
+			}
+		} catch (error) {
+			console.error('参加活动失败:', error);
+			uni.showToast({
+				title: '参加失败，请重试',
+				icon: 'none'
+			});
+		} finally {
+			participateLoading.value = false;
+		}
+	};
+
+	// 获取奖励单位文本
+	const getRewardUnitText = (unitType) => {
+		const unitMap = {
+			1: '天',
+			2: '月',
+			3: '年'
+		};
+		return unitMap[unitType] || '天';
+	};
+
 	// 跳转到热门试卷
 	const navigateToHotExamPaper = () => {
 		if (hotExamPaperId.value) {
@@ -363,10 +541,22 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		if (options.shareCode) {
 			handleShareCode(options.shareCode);
 		}
-		// 解析邀请人ID
+		// 解析邀请人ID（兼容旧版本）
 		if (options.inviterId) {
 			inviterId.value = options.inviterId;
 			console.log('收到邀请人ID:', inviterId.value);
+		}
+		// 解析邀请码（新版本使用inviteCode）
+		if (options.inviteCode) {
+			// 校验邀请码长度必须为8位
+			if (options.inviteCode.length === 8) {
+				inviteCodeFromShare.value = options.inviteCode;
+				console.log('收到邀请码:', inviteCodeFromShare.value);
+				// 保存到本地存储，登录后使用
+				uni.setStorageSync('pending_invite_code', options.inviteCode);
+			} else {
+				console.log('邀请码格式错误，必须为8位字符:', options.inviteCode);
+			}
 		}
 		// 检查登录状态，未登录则自动登录（携带邀请人ID）
 		checkAndLogin();
@@ -374,16 +564,21 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 
 	// 检查登录状态并执行登录
 	const checkAndLogin = async () => {
-		// 如果已登录，直接返回
+		// 如果已登录，检查是否需要绑定邀请码
 		if (isLoggedIn()) {
 			console.log('用户已登录');
+			await checkAndBindInviteCode();
 			return;
 		}
 		// 未登录，执行微信登录
 		try {
 			console.log('用户未登录，开始自动登录');
-			await loginByWechat(inviterId.value);
+			// 优先使用inviteCodeFromShare，兼容旧版本inviterId
+			const shareInviteCode = inviteCodeFromShare.value || inviterId.value;
+			await loginByWechat(shareInviteCode);
 			console.log('自动登录成功');
+			// 登录成功后检查是否需要绑定邀请码
+			await checkAndBindInviteCode();
 			// 登录成功后刷新页面数据
 			fetchCheckinCalendar();
 			fetchLatestAnswering();
@@ -397,6 +592,64 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		}
 	};
 
+	// 检查并绑定邀请码
+	const checkAndBindInviteCode = async () => {
+		try {
+			// 获取待处理的邀请码
+			const pendingInviteCode = uni.getStorageSync('pending_invite_code');
+			if (!pendingInviteCode) {
+				return;
+			}
+
+			// 校验邀请码长度必须为8位
+			if (pendingInviteCode.length !== 8) {
+				console.log('邀请码格式错误，清除待处理邀请码:', pendingInviteCode);
+				uni.removeStorageSync('pending_invite_code');
+				return;
+			}
+
+			// 获取当前用户信息
+			const userInfo = await getCurrentUser();
+			console.log('当前用户信息:', userInfo);
+
+			// 如果用户已经有邀请人，清除待处理邀请码并返回
+			if (userInfo.inviterId > 0) {
+				console.log('用户已绑定邀请人，清除待处理邀请码');
+				uni.removeStorageSync('pending_invite_code');
+				return;
+			}
+
+			// 检查是否是自己的邀请码
+			if (pendingInviteCode === userInfo.inviteCode) {
+				console.log('不能绑定自己的邀请码');
+				uni.removeStorageSync('pending_invite_code');
+				return;
+			}
+
+			// 提示用户是否绑定邀请码
+			uni.showModal({
+				title: '绑定邀请码',
+				content: `检测到邀请码：${pendingInviteCode}，是否立即绑定？\n（邀请码只能绑定一次）`,
+				confirmText: '立即绑定',
+				cancelText: '暂不绑定',
+				confirmColor: '#1890ff',
+				success: async (res) => {
+					if (res.confirm) {
+						// 用户确认绑定，跳转到用户页面并自动填写
+						uni.navigateTo({
+							url: `/pages/user/user?autoFillInviteCode=${pendingInviteCode}`
+						});
+					} else {
+						// 用户取消，保留邀请码，下次再提示
+						console.log('用户暂不绑定邀请码');
+					}
+				}
+			});
+		} catch (error) {
+			console.error('检查邀请码绑定失败:', error);
+		}
+	};
+
 	// 页面加载时初始化
 	onMounted(() => {
 		// 设置今日日期
@@ -404,6 +657,8 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		todayDate.value = formatDate(today);
 		// 初始化选中的日期为今日
 		selectedDate.value = formatDate(today);
+		// 获取活动数据
+		fetchCurrentActivity();
 		// 如果已登录，直接加载数据；未登录则在登录成功后加载
 		if (isLoggedIn()) {
 			// 获取签到日历数据
@@ -429,10 +684,10 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		});
 	};
 
-	// 跳转到创建试卷
-	const navigateToCreateExam = () => {
+	// 跳转到关系管理页
+	const navigateToRelationManager = () => {
 		uni.navigateTo({
-			url: '/pages/create-exam-paper/create-exam-paper'
+			url: '/pages/relationship-manager/relationship-manager'
 		});
 	};
 
@@ -443,23 +698,15 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		});
 	};
 
-	// 下拉刷新
-	const onRefresh = async () => {
-		refresherTriggered.value = true;
+	// 页面下拉刷新
+	onPullDownRefresh(async () => {
+		console.log('首页下拉刷新');
 		await fetchTodayStatistics();
 		await fetchCheckinCalendar();
 		await fetchLatestAnswering();
-		refresherTriggered.value = false;
-		// 显示刷新成功提示
-		uni.showToast({
-			title: '数据已更新',
-			icon: 'success',
-			duration: 1500
-		});
-	};
-
-	// 下拉刷新拉动中
-	const onRefresherPulling = () => {};
+		await fetchCurrentActivity();
+		uni.stopPullDownRefresh();
+	});
 </script>
 
 <style scoped>
@@ -736,6 +983,270 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		border-radius: 16rpx 16rpx 0 0;
 	}
 
+	/* 活动容器 */
+	.activity-container {
+		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+		border-radius: 20rpx;
+		padding: 28rpx;
+		margin-bottom: 24rpx;
+		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.25);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* 装饰背景 */
+	.activity-container::before {
+		content: '';
+		position: absolute;
+		top: -50%;
+		right: -20%;
+		width: 200rpx;
+		height: 200rpx;
+		background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+		border-radius: 50%;
+	}
+
+	.activity-badge {
+		position: absolute;
+		top: 16rpx;
+		right: 16rpx;
+		background: rgba(255, 255, 255, 0.9);
+		color: #1890ff;
+		font-size: 20rpx;
+		font-weight: 600;
+		padding: 6rpx 14rpx;
+		border-radius: 20rpx;
+	}
+
+	.activity-main {
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+		margin-bottom: 20rpx;
+	}
+
+	.activity-icon-wrap {
+		width: 88rpx;
+		height: 88rpx;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.activity-emoji {
+		font-size: 44rpx;
+	}
+
+	.activity-info {
+		flex: 1;
+	}
+
+	.activity-name {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #ffffff;
+		display: block;
+		margin-bottom: 8rpx;
+	}
+
+	.activity-reward {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-top: 4rpx;
+	}
+
+	.reward-label {
+		font-size: 22rpx;
+		color: rgba(255, 255, 255, 0.9);
+		background: rgba(255, 255, 255, 0.2);
+		padding: 4rpx 12rpx;
+		border-radius: 8rpx;
+	}
+
+	.reward-highlight {
+		font-size: 36rpx;
+		font-weight: 800;
+		color: #fff566;
+		text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+	}
+
+	.activity-progress {
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 16rpx;
+		padding: 20rpx 24rpx;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.progress-info {
+		display: flex;
+		align-items: center;
+		gap: 24rpx;
+	}
+
+	.progress-item {
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+	}
+
+	.progress-label {
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.progress-value {
+		font-size: 26rpx;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.progress-divider {
+		width: 2rpx;
+		height: 40rpx;
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	/* 进度条详情 */
+	.activity-progress-detail {
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 16rpx;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.progress-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 16rpx;
+	}
+
+	.progress-status {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+	}
+
+	.status-badge {
+		font-size: 20rpx;
+		color: #ffffff;
+		background: rgba(24, 144, 255, 0.8);
+		padding: 4rpx 12rpx;
+		border-radius: 8rpx;
+		font-weight: 500;
+	}
+
+	.status-badge.completed {
+		background: rgba(82, 196, 26, 0.8);
+	}
+
+	.complete-time {
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.progress-ratio {
+		font-size: 24rpx;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.progress-bar-container {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+	}
+
+	.progress-bar-bg {
+		flex: 1;
+		height: 16rpx;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 8rpx;
+		overflow: hidden;
+	}
+
+	.progress-bar-fill {
+		height: 100%;
+		background: linear-gradient(90deg, #fff566 0%, #ffd700 100%);
+		border-radius: 8rpx;
+		transition: width 0.5s ease;
+	}
+
+	.progress-percent {
+		font-size: 24rpx;
+		color: #fff566;
+		font-weight: 700;
+		min-width: 60rpx;
+		text-align: right;
+	}
+
+	/* 参加活动按钮区域 */
+	.activity-action {
+		margin-top: 24rpx;
+		display: flex;
+		justify-content: center;
+	}
+
+	.participate-btn {
+		width: 100%;
+		height: 80rpx;
+		background: linear-gradient(135deg, #fff566 0%, #ffd700 100%);
+		border-radius: 40rpx;
+		border: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4rpx 16rpx rgba(255, 245, 102, 0.4);
+		transition: all 0.3s ease;
+	}
+
+	.participate-btn:active:not(.loading) {
+		transform: scale(0.98);
+		box-shadow: 0 2rpx 8rpx rgba(255, 245, 102, 0.3);
+	}
+
+	.participate-btn.loading {
+		opacity: 0.8;
+	}
+
+	.participate-btn .btn-text {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #333;
+	}
+
+	.participate-btn .btn-loading-text {
+		font-size: 30rpx;
+		font-weight: 600;
+		color: #666;
+	}
+
+	.participated-status {
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
+		background: rgba(255, 255, 255, 0.2);
+		padding: 16rpx 32rpx;
+		border-radius: 40rpx;
+	}
+
+	.participated-status .status-icon {
+		font-size: 28rpx;
+		color: #52c41a;
+		font-weight: 700;
+	}
+
+	.participated-status .status-text {
+		font-size: 28rpx;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
 	/* 提示信息 */
 	.tip-container {
 		background-color: #f6ffed;
@@ -939,8 +1450,47 @@ import { loginByWechat, isLoggedIn } from '@/utils/auth.js';
 		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
 	}
 
-	.create-icon {
-		background: linear-gradient(135deg, #52c41a 0%, #95de64 100%);
+	.relation-icon {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		box-shadow: 0 8rpx 24rpx rgba(102, 126, 234, 0.3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* 关系图标图形 */
+	.relation-graphic {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8rpx;
+	}
+
+	.relation-node {
+		width: 20rpx;
+		height: 20rpx;
+		background: #ffffff;
+		border-radius: 50%;
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+	}
+
+	.relation-line {
+		width: 24rpx;
+		height: 4rpx;
+		background: #ffffff;
+		border-radius: 2rpx;
+		box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+	}
+
+	/* 关系管理项特殊样式 */
+	.relation-item:active .relation-node {
+		transform: scale(1.2);
+		transition: transform 0.2s ease;
+	}
+
+	.relation-item:active .relation-line {
+		width: 28rpx;
+		transition: width 0.2s ease;
 	}
 
 	.history-icon {

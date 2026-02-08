@@ -34,11 +34,11 @@
 				重新领取
 			</button>
 			<button 
-				v-if="answerStatus !== 'ongoing' && !showAnswer" 
+				v-if="answerStatus !== 'ongoing'" 
 				class="action-btn show-answer-btn"
 				@click="toggleShowAnswer"
 			>
-				查看答案
+				{{ showAnswer ? '隐藏答案' : '查看答案' }}
 			</button>
 			<button 
 				v-if="answerStatus === 'ongoing'" 
@@ -353,6 +353,17 @@ const fetchAnswerRecordData = async (recordId) => {
 			// 设置答题状态
 			const statusCode = data.answerStatus || 1;
 			answerStatus.value = statusMap[statusCode] || 'ongoing';
+			
+			// 处理用户答案 - 将answerQuestionDTOList转换为用户答案数组
+			if (data.answerQuestionDTOList && data.answerQuestionDTOList.length > 0) {
+				userAnswers.value = data.answerQuestionDTOList.map(item => {
+					// answerOptionList 是数组，取第一个值
+					return item.answerOptionList && item.answerOptionList.length > 0 
+						? item.answerOptionList[0] 
+						: '';
+				});
+				console.log('用户答案:', userAnswers.value);
+			}
 			
 			// 更新状态显示
 			updateStatusDisplay();

@@ -43,3 +43,12 @@ export function claimExamPaper(data = {}) {
     data
   });
 }
+
+// 切换试卷认领状态
+export function changeClaimStatus(data = {}) {
+  return request({
+    url: '/examPaper/changeClaimStatus',
+    method: 'POST',
+    data
+  });
+}

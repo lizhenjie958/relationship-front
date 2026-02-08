@@ -1,65 +1,64 @@
 <template>
-	<view class="question-list-container" @refresherrefresh="onRefresh" @refresherpulling="onRefresherPulling" :refresher-enabled="true" :refresher-threshold="80" :refresher-default-style="'default'" :refresher-triggered="refresherTriggered">
-		
+	<view class="question-list-container">
 		<view class="table-container">
 			<!-- 加载状态 -->
 			<view v-if="loading" class="loading-container">
 				<view class="loading-spinner"></view>
 				<text class="loading-text">加载中...</text>
 			</view>
-			
-			<template v-else>
-			<!-- 表格头部 -->
-			<view class="table-header">
-				<view class="table-cell paper-name-cell">试卷名</view>
-				<view class="table-cell name-cell">主角</view> 
-				<view class="table-cell avatar-cell">头像</view>
-				<view class="table-cell time-cell">创建时间</view>
-			</view>
 
-			<!-- 表格内容 -->
-			<view class="table-body">
-				<view v-for="(item, index) in questions" :key="item.id" class="swipe-cell">
-					<!-- 左滑操作按钮 -->
-					<view class="swipe-actions">
-						<button class="swipe-action delete-action" @click="deleteQuestion(item.id)">
-							<text class="action-icon">🗑️</text>
-							<text class="action-text">删除</text>
-						</button>
-					</view>
-					<!-- 主内容区域 -->
-					<view 
-						class="table-row"
-						@touchstart="handleTouchStart($event, index)"
-						@touchmove="handleTouchMove($event, index)"
-						@touchend="handleTouchEnd($event, index)"
-						:style="{ transform: `translateX(${swipeOffset[index] || 0}rpx)` }"
-						@click="goToRecord(item.id)"
-					>
-						<view class="table-cell paper-name-cell">
-							<text class="paper-name">{{ item.paperName }}</text>
+			<template v-else>
+				<!-- 表格头部 -->
+				<view class="table-header">
+					<view class="table-cell paper-name-cell">试卷名</view>
+					<view class="table-cell name-cell">主角</view>
+					<view class="table-cell avatar-cell">头像</view>
+					<view class="table-cell time-cell">创建时间</view>
+				</view>
+
+				<!-- 表格内容 -->
+				<view class="table-body">
+					<view v-for="(item, index) in questions" :key="item.id" class="swipe-cell">
+						<!-- 左滑操作按钮 -->
+						<view class="swipe-actions">
+							<button class="swipe-action delete-action" @click="deleteQuestion(item.id)">
+								<text class="action-icon">🗑️</text>
+								<text class="action-text">删除</text>
+							</button>
 						</view>
-						<view class="table-cell name-cell">
-							<text class="name">{{ item.name }}</text>
-						</view>
-						<view class="table-cell avatar-cell">
-							<view class="avatar">
-								<image :src="item.avatar" class="avatar-image" />
+						<!-- 主内容区域 -->
+						<view
+							class="table-row"
+							@touchstart="handleTouchStart($event, index)"
+							@touchmove="handleTouchMove($event, index)"
+							@touchend="handleTouchEnd($event, index)"
+							:style="{ transform: `translateX(${swipeOffset[index] || 0}rpx)` }"
+							@click="goToRecord(item.id)"
+						>
+							<view class="table-cell paper-name-cell">
+								<text class="paper-name">{{ item.paperName }}</text>
 							</view>
-						</view>
-						<view class="table-cell time-cell">
-							<text class="create-time">{{ item.createTime }}</text>
+							<view class="table-cell name-cell">
+								<text class="name">{{ item.name }}</text>
+							</view>
+							<view class="table-cell avatar-cell">
+								<view class="avatar">
+									<image :src="item.avatar" class="avatar-image" />
+								</view>
+							</view>
+							<view class="table-cell time-cell">
+								<text class="create-time">{{ item.createTime }}</text>
+							</view>
 						</view>
 					</view>
 				</view>
-			</view>
 
-			<!-- 空状态 -->
-			<view v-if="questions.length === 0" class="empty-state">
-				<view class="empty-icon">📭</view>
-				<text class="empty-text">暂无试卷数据</text>
-				<text class="empty-hint">快去生成一份试卷吧</text>
-			</view>
+				<!-- 空状态 -->
+				<view v-if="questions.length === 0" class="empty-state">
+					<view class="empty-icon">📭</view>
+					<text class="empty-text">暂无试卷数据</text>
+					<text class="empty-hint">快去生成一份试卷吧</text>
+				</view>
 			</template>
 		</view>
 	</view>
@@ -67,6 +66,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { onPullDownRefresh } from '@dcloudio/uni-app';
 import { request } from '@/utils/request.js';
 import { queryExamPaperList, deleteExamPaper } from '@/api/examPaperApi.js';
 
@@ -81,9 +81,6 @@ const swipeOffset = ref({}); // 存储每个项目的滑动偏移量
 const startX = ref({}); // 存储每个项目的起始触摸X坐标
 const isSwipping = ref({}); // 标记每个项目是否正在滑动
 const ACTION_WIDTH = 130; // 操作按钮总宽度（一个删除按钮130rpx）
-
-// 下拉刷新状态
-const refresherTriggered = ref(false);
 
 // 跳转到答题记录页
 const goToRecord = (questionId) => {
@@ -225,30 +222,13 @@ const fetchExamPapers = async () => {
 	}
 };
 
-// 下拉刷新事件处理
-const onRefresh = async () => {
-	// 开始刷新，显示loading
-	refresherTriggered.value = true;
-	// 重置滑动状态
+// 页面下拉刷新
+onPullDownRefresh(async () => {
+	console.log('试卷列表页面下拉刷新');
 	resetAllSwipe();
-	// 调用API获取最新试卷列表
 	await fetchExamPapers();
-	// 刷新完成，隐藏loading
-	refresherTriggered.value = false;
-	// 显示刷新成功提示
-	if (questions.value.length > 0) {
-		uni.showToast({
-			title: `已更新 ${questions.value.length} 条数据`,
-			icon: 'success',
-			duration: 1500
-		});
-	}
-};
-
-// 下拉过程事件处理（可选）
-const onRefresherPulling = () => {
-	// 可以在这里添加下拉过程中的动画或状态更新
-};
+	uni.stopPullDownRefresh();
+});
 
 onMounted(() => {
 	// 调用API获取试卷列表

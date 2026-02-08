@@ -5,6 +5,7 @@ import { sign } from "./signUtil.js";
 // 存储键名
 const TOKEN_KEY = 'wx_token';
 const USER_ID_KEY = 'wx_userId';
+const USER_TYPE_KEY = 'wx_userType';
 
 // 获取存储的token
 export function getToken() {
@@ -21,6 +22,17 @@ export function setToken(token) {
 export function clearToken() {
   uni.removeStorageSync(TOKEN_KEY);
   uni.removeStorageSync(USER_ID_KEY);
+  uni.removeStorageSync(USER_TYPE_KEY);
+}
+
+// 获取用户类型
+export function getUserType() {
+  return uni.getStorageSync(USER_TYPE_KEY);
+}
+
+// 存储用户类型
+export function setUserType(userType) {
+  uni.setStorageSync(USER_TYPE_KEY, userType);
 }
 
 // 获取用户ID
@@ -40,13 +52,13 @@ export function isLoggedIn() {
 }
 
 // 微信登录
-export async function loginByWechat(inviterId = null) {
+export async function loginByWechat(inviteCode = null) {
   let loadingShown = false;
   try {
     // 显示加载中
     uni.showLoading({ title: '登录中...', mask: true });
     loadingShown = true;
-    
+
     // 1. 获取微信登录授权码
     const loginResult = await new Promise((resolve, reject) => {
       uni.login({
@@ -55,17 +67,17 @@ export async function loginByWechat(inviterId = null) {
         fail: reject
       });
     });
-    
+
     if (!loginResult.code) {
       throw new Error('获取微信授权码失败');
     }
-    
+
     const openIdAuthCode = loginResult.code;
     const data = { openIdAuthCode };
-    
-    // 如果有邀请人ID，添加到登录参数中
-    if (inviterId) {
-      data.inviterId = inviterId;
+
+    // 如果有邀请码，添加到登录参数中
+    if (inviteCode) {
+      data.inviteCode = inviteCode;
     }
     
     const timestamp = new Date().getTime();

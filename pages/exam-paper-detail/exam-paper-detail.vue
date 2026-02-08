@@ -19,8 +19,12 @@
 				
 				<!-- 出题人操作按钮 -->
 				<view v-if="isExaminer" class="examiner-actions">
-					<button class="action-btn close-share-btn" @click="handleCloseShare">
-						<text class="btn-text">关闭分享</text>
+					<button 
+						class="action-btn" 
+						:class="claimStatus === 1 ? 'close-share-btn' : 'open-share-btn'"
+						@click="handleToggleShare"
+					>
+						<text class="btn-text">{{ claimStatus === 1 ? '关闭分享' : '开启分享' }}</text>
 					</button>
 					<button class="action-btn view-share-btn" @click="handleViewShareRecord">
 						<text class="btn-text">分享记录</text>
@@ -50,7 +54,7 @@
 <script setup>
 	import { ref, onMounted } from 'vue';
 import QuestionInfo from '@/components/QuestionInfo.vue';
-import { getExamPaperDetail, claimExamPaper } from '@/api/examPaperApi.js';
+import { getExamPaperDetail, claimExamPaper, changeClaimStatus } from '@/api/examPaperApi.js';
 import { addShareRecord } from '@/api/shareApi.js';
 import { request } from '@/utils/request.js';
 import { getUserId } from '@/utils/auth.js';
@@ -82,6 +86,8 @@ import { getUserId } from '@/utils/auth.js';
 	const source = ref('');
 	// 答题状态
 	const answerStatus = ref('');
+	// 试卷认领状态 0-未开启 1-可领取 2-不可领取
+	const claimStatus = ref(0);
 	
 	// 获取试卷详情
 	const fetchPaperDetail = async () => {
@@ -106,6 +112,8 @@ import { getUserId } from '@/utils/auth.js';
 				createTime.value = data.createTime;
 				// 获取出题人ID
 				examinerId.value = data.examinerId || '';
+				// 获取试卷认领状态
+				claimStatus.value = data.claimStatus || 0;
 				// 判断当前用户是否为出题人
 				const currentUserId = getUserId();
 				isExaminer.value = examinerId.value && examinerId.value === currentUserId;
@@ -179,30 +187,53 @@ onLoad((options) => {
 	}
 });
 
-// 关闭分享
-const handleCloseShare = async () => {
+// 切换分享状态（开启/关闭）
+const handleToggleShare = async () => {
+	const isOpen = claimStatus.value === 1;
+	const title = isOpen ? '确认关闭分享' : '确认开启分享';
+	const content = isOpen
+		? '关闭分享后，其他人将无法通过分享链接访问此试卷，是否继续？'
+		: '开启分享后，其他人可以通过分享链接访问并认领此试卷，是否继续？';
+	const confirmText = isOpen ? '关闭' : '开启';
+	const successMsg = isOpen ? '已关闭分享' : '已开启分享';
+
 	uni.showModal({
-		title: '确认关闭分享',
-		content: '关闭分享后，其他人将无法通过分享链接访问此试卷，是否继续？',
-		confirmText: '关闭',
+		title: title,
+		content: content,
+		confirmText: confirmText,
 		confirmColor: '#ff4d4f',
 		cancelText: '取消',
 		success: async (res) => {
 			if (res.confirm) {
 				try {
 					uni.showLoading({ title: '处理中...' });
-					// TODO: 调用关闭分享接口
-					// const response = await closeShare({ id: paperId.value });
-					uni.hideLoading();
-					uni.showToast({
-						title: '已关闭分享',
-						icon: 'success'
+
+					// 调用切换分享状态接口
+					const response = await changeClaimStatus({
+						id: paperId.value,
+						claimStatus: isOpen ? 2 : 1
 					});
+
+					uni.hideLoading();
+
+					if (response.code === 200) {
+						// 更新本地状态
+						claimStatus.value = isOpen ? 2 : 1;
+						uni.showToast({
+							title: successMsg,
+							icon: 'success'
+						});
+					} else {
+						uni.showToast({
+							title: response.msg || '操作失败',
+							icon: 'none'
+						});
+					}
 				} catch (error) {
 					uni.hideLoading();
-					console.error('关闭分享失败:', error);
+					console.error('切换分享状态失败:', error);
 					uni.showToast({
-						title: '关闭失败，请重试',
+						title: '操作失败，请重试',
 						icon: 'none'
 					});
 				}
@@ -214,7 +245,7 @@ const handleCloseShare = async () => {
 // 查看分享记录
 const handleViewShareRecord = () => {
 	uni.navigateTo({
-		url: `/pages/share-record/share-record?paperId=${paperId.value}`
+		url: `/pages/share-record/share-record?sourceId=${paperId.value}`
 	});
 };
 
@@ -397,6 +428,11 @@ onMounted(async () => {
 
 	.close-share-btn {
 		background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+		color: #fff;
+	}
+
+	.open-share-btn {
+		background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
 		color: #fff;
 	}
 

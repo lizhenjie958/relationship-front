@@ -3,13 +3,15 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "答题"
+				"navigationBarTitleText": "答题",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/relationship-list/relationship-list",
 			"style": {
-				"navigationBarTitleText": "关系"
+				"navigationBarTitleText": "关系",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -21,7 +23,8 @@
 		{
 			"path": "pages/user/user",
 			"style": {
-				"navigationBarTitleText": "用户中心"
+				"navigationBarTitleText": "用户中心",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -33,7 +36,8 @@
 		{
 			"path": "pages/exam-paper-list/exam-paper-list",
 			"style": {
-				"navigationBarTitleText": "试卷列表"
+				"navigationBarTitleText": "试卷列表",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
@@ -45,7 +49,33 @@
 		{
 			"path": "pages/answer-paper-list/answer-paper-list",
 			"style": {
-				"navigationBarTitleText": "答题列表"
+				"navigationBarTitleText": "答题列表",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/share-record/share-record",
+			"style": {
+				"navigationBarTitleText": "分享记录",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/vip-benefits/vip-benefits",
+			"style": {
+				"navigationBarTitleText": "会员权益"
+			}
+		},
+		{
+			"path": "pages/vip-records/vip-records",
+			"style": {
+				"navigationBarTitleText": "权益记录"
+			}
+		},
+		{
+			"path": "pages/vip-redeem/vip-redeem",
+			"style": {
+				"navigationBarTitleText": "兑换权益"
 			}
 		}
 	],

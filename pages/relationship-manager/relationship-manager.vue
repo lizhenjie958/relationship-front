@@ -33,62 +33,70 @@
 					</view>
 				</view>
 				
-				<!-- 姓名 -->
+				<!-- 主角姓名 -->
 				<view class="info-section">
-					<text class="info-label">姓名</text>
+					<view class="info-label-row">
+						<text class="info-label">主角姓名</text>
+						<text class="required-mark">*</text>
+					</view>
 					<view class="info-content">
-						<view v-if="!editState.name" class="info-value" @click="!editDisabled && (editState.name = true)" :class="{ 'disabled': editDisabled }">
-							{{ userInfo.name || '点击修改' }}
+						<view v-if="!editState.name" class="info-value" @click="!editDisabled && (editState.name = true)" :class="{ 'disabled': editDisabled, 'empty': !userInfo.name }">
+							{{ userInfo.name || '请输入主角姓名' }}
 							<text class="edit-hint">✏️</text>
 						</view>
-						<input v-else 
-							v-model="userInfo.name" 
-							class="info-input" 
-							@blur="editState.name = false"
+						<input v-else
+							v-model="userInfo.name"
+							class="info-input"
+							@blur="handleNameBlur"
 							@keyup.enter="editState.name = false"
-							placeholder="请输入姓名"
+							placeholder="请输入主角姓名"
 							auto-focus
 							:disabled="editDisabled"
 						/>
 					</view>
+					<text v-if="nameError" class="field-error">主角姓名不能为空</text>
 				</view>
 				
 				<!-- 备注 -->
 				<view class="info-section remark-section">
-					<text class="info-label">备注</text>
+					<view class="info-label-row">
+						<text class="info-label">备注</text>
+						<text class="required-mark">*</text>
+					</view>
 					<view class="info-content">
-						<view v-if="!editState.remark" class="info-value remark-value" @click="!editDisabled && (editState.remark = true)" :class="{ 'disabled': editDisabled }">
-							{{ userInfo.remark || '点击修改' }}
+						<view v-if="!editState.remark" class="info-value remark-value" @click="!editDisabled && (editState.remark = true)" :class="{ 'disabled': editDisabled, 'empty': !userInfo.remark }">
+							{{ userInfo.remark || '请输入备注' }}
 							<text class="edit-hint">✏️</text>
 						</view>
-						<textarea v-else 
-							v-model="userInfo.remark" 
-							class="info-textarea" 
-							@blur="editState.remark = false"
+						<textarea v-else
+							v-model="userInfo.remark"
+							class="info-textarea"
+							@blur="handleRemarkBlur"
 							placeholder="请输入备注"
 							rows="3"
 							auto-focus
 							:disabled="editDisabled"
 						/>
 					</view>
+					<text v-if="remarkError" class="field-error">备注不能为空</text>
 				</view>
 			</view>
 		</view>
 
 		<view class="table-container">
 			<view class="table-header">
-				<view class="table-cell relation-header">关系</view>
-				<view class="table-cell avatar-header">头像</view>
-				<view class="table-cell action-header">操作</view>
+				<view class="table-cell relation-col">关系</view>
+				<view class="table-cell avatar-col">头像</view>
+				<view class="table-cell action-col">操作</view>
 			</view>
 
 			<view class="table-body">
 				<view v-for="(item, index) in relationList" :key="index" class="table-row">
-					<view class="table-cell">
+					<view class="table-cell relation-col">
 						<view class="input-wrapper">
-							<input 
-								v-model="item.relation" 
-								class="relation-input" 
+							<input
+								v-model="item.relation"
+								class="relation-input"
 								placeholder="请输入关系"
 								:class="{ 'error': item.error && !item.relation, 'disabled': editDisabled }"
 								:disabled="editDisabled"
@@ -96,7 +104,7 @@
 							<view v-if="item.error && !item.relation" class="error-hint">请填写关系</view>
 						</view>
 					</view>
-					<view class="table-cell">
+					<view class="table-cell avatar-col">
 						<view class="avatar-cell">
 							<view class="relation-avatar-wrapper" @click="!editDisabled && chooseAvatar(index)" :class="{ 'disabled': editDisabled }">
 								<image v-if="item.avatar" :src="item.avatar" class="avatar-image" mode="aspectFill"></image>
@@ -109,7 +117,7 @@
 							</view>
 						</view>
 					</view>
-					<view class="table-cell">
+					<view class="table-cell action-col">
 						<view class="action-buttons">
 							<button class="action-btn add-btn" @click="!editDisabled && addRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
 								<text class="btn-icon">+</text>
@@ -151,6 +159,10 @@
 		name: false,
 		remark: false
 	});
+
+	// 错误状态
+	const nameError = ref(false);
+	const remarkError = ref(false);
 
 	// 关系列表
 	const relationList = ref([
@@ -236,7 +248,17 @@
 		}
 	};
 
+	// 处理主角姓名失去焦点
+	const handleNameBlur = () => {
+		editState.name = false;
+		nameError.value = !userInfo.name.trim();
+	};
 
+	// 处理备注失去焦点
+	const handleRemarkBlur = () => {
+		editState.remark = false;
+		remarkError.value = !userInfo.remark.trim();
+	};
 
 	// 通用上传函数
 	const uploadImage = async (tempFilePath, showProgress = false) => {
@@ -367,7 +389,23 @@
 	const saveData = async () => {
 		console.log('开始保存数据');
 		let isValid = true;
-		
+
+		// 验证主角姓名
+		if (!userInfo.name.trim()) {
+			nameError.value = true;
+			isValid = false;
+			uni.showToast({ title: '请填写主角姓名', icon: 'none' });
+			return;
+		}
+
+		// 验证备注
+		if (!userInfo.remark.trim()) {
+			remarkError.value = true;
+			isValid = false;
+			uni.showToast({ title: '请填写备注', icon: 'none' });
+			return;
+		}
+
 		// 验证关系数据
 		relationList.value.forEach(item => {
 			item.error = !item.relation;
@@ -375,7 +413,7 @@
 				isValid = false;
 			}
 		});
-		
+
 		if (!isValid) {
 			uni.showToast({ title: '请填写所有关系', icon: 'none' });
 			return;
@@ -724,12 +762,39 @@
 		margin-bottom: 0;
 	}
 
+	/* 信息标签行 */
+	.info-label-row {
+		display: flex;
+		align-items: center;
+		gap: 8rpx;
+		margin-bottom: var(--spacing-xs);
+	}
+
 	/* 信息标签 */
 	.info-label {
 		font-size: 26rpx;
 		color: var(--text-color-secondary);
-		margin-bottom: var(--spacing-xs);
 		font-weight: 500;
+	}
+
+	/* 必填标记 */
+	.required-mark {
+		font-size: 24rpx;
+		color: var(--danger-color);
+		font-weight: 600;
+	}
+
+	/* 字段错误提示 */
+	.field-error {
+		font-size: 22rpx;
+		color: var(--danger-color);
+		margin-top: 8rpx;
+		display: block;
+	}
+
+	/* 空值提示 */
+	.info-value.empty {
+		color: var(--text-color-light);
 	}
 
 	/* 信息内容 */
@@ -865,16 +930,29 @@
 		background-color: var(--primary-light);
 	}
 
-	/* 表格单元格 */
-	.table-cell {
-		flex: 1;
-		text-align: center;
+	/* 表格列定义 */
+	.relation-col {
+		flex: 3;
+		text-align: left;
 		padding: 0 var(--spacing-xs);
 	}
 
-	.table-cell:first-child {
-		flex: 3;
-		text-align: left;
+	.avatar-col {
+		flex: 1.5;
+		text-align: center;
+		padding: 0 var(--spacing-xs);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.action-col {
+		flex: 1.5;
+		text-align: center;
+		padding: 0 var(--spacing-xs);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	/* 输入框包装器 */
