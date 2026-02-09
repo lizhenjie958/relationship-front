@@ -63,13 +63,15 @@
 		{
 			"path": "pages/vip-benefits/vip-benefits",
 			"style": {
-				"navigationBarTitleText": "会员权益"
+				"navigationBarTitleText": "会员权益",
+				"enablePullDownRefresh": true
 			}
 		},
 		{
 			"path": "pages/vip-records/vip-records",
 			"style": {
-				"navigationBarTitleText": "权益记录"
+				"navigationBarTitleText": "权益记录",
+				"enablePullDownRefresh": true
 			}
 		},
 		{

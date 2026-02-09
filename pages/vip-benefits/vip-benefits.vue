@@ -90,7 +90,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app';
 import { queryMember } from '@/api/memberApi.js';
 
 // 会员信息
@@ -154,6 +154,21 @@ const fetchMemberInfo = async () => {
 onLoad(() => {
 	// 获取会员信息
 	fetchMemberInfo();
+});
+
+// 页面下拉刷新
+onPullDownRefresh(async () => {
+	console.log('会员权益页面下拉刷新');
+	// 重新获取会员信息
+	await fetchMemberInfo();
+	// 停止下拉刷新
+	uni.stopPullDownRefresh();
+	// 显示刷新成功提示
+	uni.showToast({
+		title: '刷新成功',
+		icon: 'success',
+		duration: 1500
+	});
 });
 
 // 跳转到兑换页面

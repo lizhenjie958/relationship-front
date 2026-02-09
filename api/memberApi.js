@@ -1,27 +1,28 @@
 import { request } from '@/utils/request.js';
 
-/**
- * 查询会员信息
- * @returns {Promise} - 返回会员信息
- */
-export const queryMember = () => {
-	return request({
-		url: '/member/queryMember',
-		method: 'POST',
-		data: {}
-	});
-};
+// 查询会员信息
+export function queryMember(data = {}) {
+  return request({
+    url: '/member/queryMember',
+    method: 'POST',
+    data
+  });
+}
 
-/**
- * 兑换码兑换会员
- * @param {Object} data - 请求参数
- * @param {string} data.redeemCode - 兑换码
- * @returns {Promise} - 返回兑换结果
- */
-export const redeemMember = (data) => {
-	return request({
-		url: '/member/redeemMember',
-		method: 'POST',
-		data: data
-	});
-};
+// 兑换会员
+export function redeemMember(data = {}) {
+  return request({
+    url: '/member/redeem',
+    method: 'POST',
+    data
+  });
+}
+
+// 查询会员获取记录列表
+export function queryAccessRecordList(data = {}) {
+  return request({
+    url: '/member/queryAccessRecordList',
+    method: 'POST',
+    data
+  });
+}

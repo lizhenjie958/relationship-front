@@ -8,20 +8,20 @@
 
 		<!-- 记录列表 -->
 		<view class="records-list" v-if="records.length > 0">
-			<view v-for="(record, index) in records" :key="index" class="record-item">
+			<view v-for="(record, index) in records" :key="record.accessReceipt || index" class="record-item">
 				<view class="record-header">
-					<view class="record-type" :class="getTypeClass(record.type)">
-						<text class="type-text">{{ getTypeText(record.type) }}</text>
+					<view class="record-type" :class="getTypeClass(record)">
+						<text class="type-text">{{ getTypeText(record) }}</text>
 					</view>
 					<text class="record-time">{{ record.createTime }}</text>
 				</view>
 				<view class="record-content">
-					<text class="record-title">{{ record.title }}</text>
-					<text class="record-desc">{{ record.description }}</text>
+					<text class="record-title">{{ getRecordTitle(record) }}</text>
+					<text class="record-desc">{{ getRecordDesc(record) }}</text>
 				</view>
 				<view class="record-footer">
-					<text class="record-status" :class="getStatusClass(record.status)">
-						{{ getStatusText(record.status) }}
+					<text class="record-status" :class="getStatusClass(record)">
+						{{ getStatusText(record) }}
 					</text>
 				</view>
 			</view>
@@ -40,7 +40,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app';
+import { queryAccessRecordList } from '@/api/memberApi.js';
 
 // 记录列表
 const records = ref([]);
@@ -50,74 +51,119 @@ onLoad(() => {
 	loadRecords();
 });
 
+// 页面下拉刷新
+onPullDownRefresh(async () => {
+	console.log('权益记录页面下拉刷新');
+	// 重新获取权益记录
+	await loadRecords();
+	// 停止下拉刷新
+	uni.stopPullDownRefresh();
+});
+
 // 加载记录数据
-const loadRecords = () => {
-	// 这里应该从接口获取数据，暂时使用模拟数据
-	records.value = [
-		{
-			type: 'redeem',
-			title: '兑换码兑换',
-			description: '使用兑换码获得30天会员权益',
-			createTime: '2024-01-15 14:30:25',
-			status: 'active'
-		},
-		{
-			type: 'share',
-			title: '分享奖励',
-			description: '成功邀请26位好友，获得永久会员',
-			createTime: '2024-01-10 09:15:33',
-			status: 'active'
-		},
-		{
-			type: 'activity',
-			title: '活动奖励',
-			description: '参与新年活动获得7天会员',
-			createTime: '2023-12-25 18:20:15',
-			status: 'expired'
+const loadRecords = async () => {
+	try {
+		uni.showLoading({ title: '加载中...' });
+		const response = await queryAccessRecordList({});
+		
+		if (response.code === 200 && response.data) {
+			const list = response.data.list || [];
+			// 转换接口数据为页面需要的格式
+			records.value = list.map(item => ({
+				accessChannelCode: item.accessChannelCode,
+				accessReceipt: item.accessReceipt,
+				accessUnitType: item.accessUnitType,
+				accessValue: item.accessValue,
+				createTime: formatDateTime(item.createTime)
+			}));
+		} else {
+			uni.showToast({
+				title: response.msg || '获取记录失败',
+				icon: 'none'
+			});
 		}
-	];
+	} catch (error) {
+		console.error('获取会员记录失败:', error);
+		uni.showToast({
+			title: '获取记录失败',
+			icon: 'none'
+		});
+	} finally {
+		uni.hideLoading();
+	}
+};
+
+// 格式化日期时间
+const formatDateTime = (dateTimeStr) => {
+	if (!dateTimeStr) return '';
+	const date = new Date(dateTimeStr);
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const seconds = String(date.getSeconds()).padStart(2, '0');
+	return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
+// 获取渠道映射
+const getChannelInfo = (channelCode) => {
+	const channelMap = {
+		'c8z85k': { type: 'share', name: '邀请好友', desc: '邀请好友注册' },
+		'jm6nm2': { type: 'activity', name: '累计签到', desc: '累计答题签到' },
+		'e6hn9u': { type: 'redeem', name: '兑换码', desc: '兑换码兑换' }
+	};
+	return channelMap[channelCode] || { type: 'default', name: '其他', desc: '其他方式' };
+};
+
+// 获取单位文本
+const getUnitText = (unitType) => {
+	const unitMap = {
+		1: '天',
+		2: '月',
+		3: '年'
+	};
+	return unitMap[unitType] || '天';
 };
 
 // 获取类型样式
-const getTypeClass = (type) => {
+const getTypeClass = (record) => {
+	const channelInfo = getChannelInfo(record.accessChannelCode);
 	const classMap = {
 		'redeem': 'type-redeem',
 		'share': 'type-share',
 		'activity': 'type-activity',
 		'purchase': 'type-purchase'
 	};
-	return classMap[type] || 'type-default';
+	return classMap[channelInfo.type] || 'type-default';
 };
 
 // 获取类型文本
-const getTypeText = (type) => {
-	const textMap = {
-		'redeem': '兑换',
-		'share': '分享',
-		'activity': '活动',
-		'purchase': '购买'
-	};
-	return textMap[type] || '其他';
+const getTypeText = (record) => {
+	const channelInfo = getChannelInfo(record.accessChannelCode);
+	return channelInfo.name;
 };
 
-// 获取状态样式
-const getStatusClass = (status) => {
-	const classMap = {
-		'active': 'status-active',
-		'expired': 'status-expired',
-		'pending': 'status-pending'
-	};
-	return classMap[status] || 'status-default';
+// 获取标题
+const getRecordTitle = (record) => {
+	const channelInfo = getChannelInfo(record.accessChannelCode);
+	return channelInfo.desc;
+};
+
+// 获取描述
+const getRecordDesc = (record) => {
+	const unit = getUnitText(record.accessUnitType);
+	return `获得 ${record.accessValue}${unit}会员权益`;
+};
+
+// 获取状态样式（根据记录时间判断，这里简化处理为永久生效）
+const getStatusClass = (record) => {
+	return 'status-active';
 };
 
 // 获取状态文本
-const getStatusText = (status) => {
-	const textMap = {
-		'active': '生效中',
-		'expired': '已过期',
-		'pending': '待生效'
-	};
-	return textMap[status] || '未知';
+const getStatusText = (record) => {
+	return '已到账';
 };
 </script>
 

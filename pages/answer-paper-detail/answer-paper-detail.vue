@@ -65,12 +65,13 @@
 </template>
 
 <script setup>
-	import { ref, onMounted } from 'vue';
+	import { ref, onMounted, computed, onUnmounted } from 'vue';
 import QuestionInfo from '@/components/QuestionInfo.vue';
 import { request } from '@/utils/request.js';
 import { getExamPaperDetail } from '@/api/examPaperApi.js';
 import { queryAnswerPaperDetail, completeAnswer, giveUpAnswer } from '@/api/answerPaperApi.js';
 import { claimExamPaper } from '@/api/examPaperApi.js';
+import { queryMember } from '@/api/memberApi.js';
 	
 	// 接收外部传入的答题记录ID参数
 	const props = defineProps({
@@ -98,32 +99,148 @@ const questions = ref([]); // 题目数据
 const statusText = ref('');
 const statusClass = ref('');
 
+// 是否为会员
+const isMember = computed(() => {
+	return memberInfo.value && (memberInfo.value.enableTime || memberInfo.value.expireTime);
+});
+
+// 是否已过期
+const isExpired = computed(() => {
+	console.log('memberInfo.value:', isMember.value);
+	if (!isMember.value) return false;
+	if (memberInfo.value.enableStatus === 2) return true;
+	if (memberInfo.value.expireTime) {
+		return new Date(memberInfo.value.expireTime) < new Date();
+	}
+	return false;
+});
+
+// 会员信息
+const memberInfo = ref({
+	enableTime: '',
+	expireTime: '',
+	enableStatus: 2
+});
+
+// 激励视频广告实例
+let videoAd = null;
+
+// 创建激励视频广告
+const createRewardedVideoAd = () => {
+	if (!videoAd && typeof qq !== 'undefined' && qq.createRewardedVideoAd) {
+		videoAd = qq.createRewardedVideoAd({
+			adUnitId: '' // TODO: 替换为你的微信广告单元ID
+		});
+		
+		videoAd.onLoad(() => {
+			console.log('激励视频广告加载成功');
+		});
+		
+		videoAd.onClose((res) => {
+			if (res && res.isEnded) {
+				// 完整观看广告，显示答案
+				showAnswer.value = true;
+				uni.showToast({
+					title: '广告观看完成',
+					icon: 'success'
+				});
+			} else {
+				// 中途关闭广告
+				uni.showToast({
+					title: '请完整观看广告',
+					icon: 'none'
+				});
+			}
+		});
+		
+		videoAd.onError((err) => {
+			console.error('激励视频广告错误:', err);
+			// 广告加载失败时，直接显示答案（降级方案）
+			uni.showModal({
+				title: '广告加载失败',
+				content: '无法加载广告，是否直接查看答案？',
+				confirmText: '直接查看',
+				cancelText: '取消',
+				success: (res) => {
+					if (res.confirm) {
+						showAnswer.value = true;
+					}
+				}
+			});
+		});
+	}
+};
+
+// 展示激励视频广告
+const showRewardedVideoAd = () => {
+	if (videoAd) {
+		videoAd.show().catch(() => {
+			// 显示失败，尝试重新加载
+			videoAd.load().then(() => {
+				videoAd.show();
+			}).catch((loadErr) => {
+				console.error('广告加载失败:', loadErr);
+			});
+		});
+	} else {
+		// 广告未创建，重新创建
+		createRewardedVideoAd();
+		if (videoAd) {
+			videoAd.show().catch((err) => {
+				console.error('广告展示失败:', err);
+			});
+		}
+	}
+};
+
 // 状态映射
 const statusMap = {
-	1: 'ongoing', // ANSWERING
-	2: 'completed', // COMPLETED
-	3: 'expired', // GIVEN_UP
-	4: 'expired' // TIMED_OUT
+	1: 'ongoing',
+	2: 'expired',
+	3: 'completed'
 };
 
-// 状态文本映射
 const statusTextMap = {
 	'ongoing': '答题中',
-	'completed': '已完成',
-	'expired': '已过期'
+	'expired': '已过期',
+	'completed': '已完成'
 };
 
-// 状态样式映射
 const statusClassMap = {
 	'ongoing': 'status-ongoing',
-	'completed': 'status-completed',
-	'expired': 'status-expired'
+	'expired': 'status-expired',
+	'completed': 'status-completed'
 };
 
-	// 切换显示答案
-	const toggleShowAnswer = () => {
+// 切换显示答案
+const toggleShowAnswer = async () => {
+	// 会员直接显示答案
+	if (isMember.value && !isExpired.value) {
 		showAnswer.value = !showAnswer.value;
-	};
+		return;
+	}
+	
+	// 非会员，弹出广告弹窗
+	uni.showModal({
+		title: '解锁答案',
+		content: '观看完广告即可查看答案，中途关闭将无法查看。',
+		confirmText: '观看广告',
+		cancelText: '取消',
+		success: (res) => {
+			if (res.confirm) {
+				// 用户选择观看广告
+				uni.showLoading({ title: '广告加载中...', mask: true });
+				
+				// 创建或展示激励视频广告
+				if (!videoAd) {
+					createRewardedVideoAd();
+				}
+				
+				showRewardedVideoAd();
+			}
+		}
+	});
+};
 
 	// 重新领取
 	const retryAnswer = async () => {
@@ -316,8 +433,29 @@ const updateStatusDisplay = () => {
 onMounted(async () => {
 	// 这里可以根据传入的答题记录ID获取实际数据
 	console.log('Answer record page mounted with recordId:', recordId.value);
+	// 获取会员信息
+	await fetchMemberInfo();
 	// 调用API获取数据
 	await fetchAnswerRecordData(recordId.value);
+});
+
+// 获取会员信息
+const fetchMemberInfo = async () => {
+	try {
+		const response = await queryMember();
+		if (response.code === 200 && response.data) {
+			memberInfo.value = response.data;
+		}
+	} catch (error) {
+		console.error('获取会员信息失败:', error);
+	}
+};
+
+// 页面销毁时清理广告
+onUnmounted(() => {
+	if (videoAd) {
+		videoAd = null;
+	}
 });
 	
 	// 获取答题记录数据
