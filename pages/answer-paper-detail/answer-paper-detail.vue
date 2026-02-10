@@ -6,9 +6,13 @@
 		<view class="main-info">
 			<view class="info-card">
 				<view class="info-item">
-					<text class="info-label">主角：</text>
-					<text class="info-value">{{ protagonistName }}</text>
-				</view>
+				<text class="info-label">主角：</text>
+				<text class="info-value">{{ protagonistName }}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">出题人：</text>
+				<text class="info-value">{{ examinerName }}</text>
+			</view>
 				<view class="info-item">
 					<text class="info-label">答题时间：</text>
 					<text class="info-value">{{ answerTime }}</text>
@@ -67,7 +71,7 @@
 <script setup>
 	import { ref, onMounted, computed, onUnmounted } from 'vue';
 import QuestionInfo from '@/components/QuestionInfo.vue';
-import { request } from '@/utils/request.js';
+import { request, formatDateTime } from '@/utils/request.js';
 import { getExamPaperDetail } from '@/api/examPaperApi.js';
 import { queryAnswerPaperDetail, completeAnswer, giveUpAnswer } from '@/api/answerPaperApi.js';
 import { claimExamPaper } from '@/api/examPaperApi.js';
@@ -83,6 +87,7 @@ import { queryMember } from '@/api/memberApi.js';
 	
 	// 答卷详情数据
 const protagonistName = ref('');
+const examinerName = ref('');
 const answerTime = ref('');
 const score = ref(0);
 const paperId = ref('');
@@ -459,7 +464,8 @@ const fetchAnswerRecordData = async (recordId) => {
 			
 			// 更新答卷详情数据
 			protagonistName.value = data.protagonistInfoDTO?.protagonist || '';
-			answerTime.value = data.createTime ? new Date(data.createTime).toLocaleString() : '';
+			examinerName.value = data.examinerName || '-';
+			answerTime.value = formatDateTime(data.createTime);
 			score.value = data.score || 0;
 			paperId.value = data.examPaperId || '';
 			examPaperName.value = data.examPaperName || '';
@@ -568,13 +574,16 @@ const fetchExamPaperQuestions = async (paperId) => {
 	.info-label {
 		font-size: 28rpx;
 		color: #666;
-		width: 120rpx;
+		width: 140rpx;
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 	
 	.info-value {
 		font-size: 28rpx;
 		color: #333;
 		font-weight: 500;
+		flex: 1;
 	}
 	
 	.score {

@@ -1,7 +1,25 @@
-// 使用Vite环境变量
-const domain = import.meta.env.VITE_API_DOMAIN || "http://60bj4820ma68.vicp.fun";
 import { sign } from "./signUtil.js";
 import { getToken, clearToken, loginByWechat, needReLogin } from "./auth.js";
+import { getBaseUrl } from "@/config/env.js";
+
+/**
+ * 格式化日期时间，去掉秒
+ * @param {string|Date} date - 日期字符串或Date对象
+ * @returns {string} 格式化后的时间字符串 (yyyy-MM-dd HH:mm)
+ */
+export function formatDateTime(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
 
 export async function request(config = {}) {
     // 验证配置参数
@@ -28,11 +46,14 @@ export async function request(config = {}) {
     
     try {
         // 生成签名
-        const signature = sign(data, timestamp);
+        const signature = sign(timestamp);
+        
+        // 获取当前环境的baseUrl
+        const baseUrl = getBaseUrl();
         
         return new Promise((resolve, reject) => {
             uni.request({
-                url: domain + url,
+                url: baseUrl + url,
                 method,
                 data,
                 header: {
@@ -69,7 +90,10 @@ export async function request(config = {}) {
             });
         });
     } catch (error) {
-        console.error('请求配置错误:', error);
+        console.error('请求异常:', error);
         return Promise.reject(error);
     }
 }
+
+// 导出baseUrl获取函数，供其他模块使用
+export { getBaseUrl };

@@ -93,7 +93,7 @@ const loadRecords = async () => {
 	}
 };
 
-// 格式化日期时间
+// 格式化日期时间（去掉秒）
 const formatDateTime = (dateTimeStr) => {
 	if (!dateTimeStr) return '';
 	const date = new Date(dateTimeStr);
@@ -102,8 +102,7 @@ const formatDateTime = (dateTimeStr) => {
 	const day = String(date.getDate()).padStart(2, '0');
 	const hours = String(date.getHours()).padStart(2, '0');
 	const minutes = String(date.getMinutes()).padStart(2, '0');
-	const seconds = String(date.getSeconds()).padStart(2, '0');
-	return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+	return `${year}-${month}-${day} ${hours}:${minutes}`;
 };
 
 // 获取渠道映射

@@ -9,13 +9,17 @@
 					<text class="info-value">{{ paperName }}</text>
 				</view>
 				<view class="info-item">
-					<text class="info-label">主角：</text>
-					<text class="info-value">{{ protagonistName }}</text>
-				</view>
-				<view class="info-item">
-					<text class="info-label">创建时间：</text>
-					<text class="info-value">{{ createTime }}</text>
-				</view>
+				<text class="info-label">主角：</text>
+				<text class="info-value">{{ protagonistName }}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">出题人：</text>
+				<text class="info-value">{{ examinerName }}</text>
+			</view>
+			<view class="info-item">
+				<text class="info-label">创建时间：</text>
+				<text class="info-value">{{ createTime }}</text>
+			</view>
 				
 				<!-- 出题人操作按钮 -->
 				<view v-if="isExaminer" class="examiner-actions">
@@ -72,7 +76,7 @@ import { onPullDownRefresh } from '@dcloudio/uni-app';
 import QuestionInfo from '@/components/QuestionInfo.vue';
 import { getExamPaperDetail, claimExamPaper, changeClaimStatus } from '@/api/examPaperApi.js';
 import { addShareRecord } from '@/api/shareApi.js';
-import { request } from '@/utils/request.js';
+import { request, formatDateTime } from '@/utils/request.js';
 import { getUserId } from '@/utils/auth.js';
 	
 	// 接收外部传入的试卷ID参数
@@ -88,6 +92,7 @@ import { getUserId } from '@/utils/auth.js';
 	// 试卷信息
 	const paperName = ref('');
 	const protagonistName = ref('');
+	const examinerName = ref('');
 	const createTime = ref('');
 	const creatorName = ref('系统管理员');
 	// 出题人ID
@@ -134,7 +139,8 @@ import { getUserId } from '@/utils/auth.js';
 				// 更新试卷信息
 				paperName.value = data.name;
 				protagonistName.value = data.protagonistInfoDTO.protagonist;
-				createTime.value = data.createTime;
+				examinerName.value = data.examinerName || '-';
+				createTime.value = formatDateTime(data.createTime);
 				// 获取出题人ID
 				examinerId.value = data.examinerId || '';
 				// 获取试卷认领状态
@@ -396,7 +402,9 @@ onMounted(async () => {
 	.info-label {
 		font-size: 28rpx;
 		color: #666;
-		width: 120rpx;
+		width: 140rpx;
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 	
 	.info-value {

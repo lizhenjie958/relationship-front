@@ -72,6 +72,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onPullDownRefresh } from '@dcloudio/uni-app';
 import { queryAnswerPaperList } from '@/api/answerPaperApi.js';
+import { formatDateTime } from '@/utils/request.js';
 
 // Tab配置
 const tabs = [
@@ -114,18 +115,18 @@ const fetchAnswers = async () => {
 			// 处理返回数据，映射为组件需要的格式
 			const apiData = response.data.list || [];
 			answers.value = apiData.map(item => ({
-					id: item.id,
-					status: activeTab.value, // 当前tab对应的状态
-					creator: '系统管理员', // 接口未返回，暂时使用默认值
-					protagonist: item.protagonistInfoDTO?.protagonist || '',
-					answerTime: item.createTime ? new Date(item.createTime).toLocaleString() : '',
-					expireTime: item.timeoutTime ? new Date(item.timeoutTime).toLocaleString() : '',
-					completeTime: item.completeTime ? new Date(item.completeTime).toLocaleString() : '',
-					score: item.score || 0, // 使用接口返回的真实score值
-					examPaperId: item.examPaperId,
-					examPaperName: item.examPaperName,
-					protagonistInfo: item.protagonistInfoDTO
-				}));
+						id: item.id,
+						status: activeTab.value, // 当前tab对应的状态
+						creator: item.examinerName || '-',
+						protagonist: item.protagonistInfoDTO?.protagonist || '',
+						answerTime: formatDateTime(item.createTime),
+						expireTime: formatDateTime(item.timeoutTime),
+						completeTime: formatDateTime(item.completeTime),
+						score: item.score || 0, // 使用接口返回的真实score值
+						examPaperId: item.examPaperId,
+						examPaperName: item.examPaperName,
+						protagonistInfo: item.protagonistInfoDTO
+					}));
 		} else {
 			uni.showToast({
 				title: response.msg || '获取答题记录失败',

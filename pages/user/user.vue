@@ -26,9 +26,13 @@
 							@keyup.esc="cancelEditing"
 							autofocus
 						/>
-						<button class="save-btn" @click="saveUserName">保存</button>
+						<button class="save-btn" @click="saveUserName">确认</button>
 					</view>
 				</template>
+				<!-- 修改次数提示 -->
+				<view class="update-times-hint">
+					<text class="update-times-text">今日已修改 {{ updateTimes }} 次，剩余 {{ remainingTimes }} 次</text>
+				</view>
 				</view>
 			</view>
 		</view>
@@ -295,7 +299,7 @@
 	import { onLoad } from '@dcloudio/uni-app';
 	import { getCurrentUser, getUserId, setUserType } from '@/utils/auth.js';
 	import { uploadFile } from '@/utils/upload.js';
-	import { updateUser, maintainInviter } from '@/api/userApi.js';
+	import { updateUser, maintainInviter, getUpdateTimes } from '@/api/userApi.js';
 	import { queryCurrentActivity, participateActivity, queryParticipateRecord } from '@/api/activityApi.js';
 
 	// 用户类型 0-普通用户 1-会员 2-非会员
@@ -316,6 +320,11 @@
 	const inviterId = ref('');
 	const hasInviter = ref(false);
 
+	// 修改次数相关
+	const updateTimes = ref(0);
+	const updateTimesLimit = ref(5);
+	const remainingTimes = computed(() => Math.max(0, updateTimesLimit.value - updateTimes.value));
+
 	// 弹窗显示状态
 	const showInviteCodeDialog = ref(false);
 	const showScanDialog = ref(false);
@@ -327,6 +336,19 @@
 	const hasParticipatedShare = ref(false);
 	const participateShareLoading = ref(false);
 	const participateShareRecord = ref(null);
+
+	// 获取用户修改次数
+	const fetchUpdateTimes = async () => {
+		try {
+			const response = await getUpdateTimes();
+			if (response.code === 200 && response.data) {
+				updateTimes.value = response.data.updateTimes || 0;
+				updateTimesLimit.value = response.data.updateTimesLimit || 5;
+			}
+		} catch (error) {
+			console.error('获取修改次数失败:', error);
+		}
+	};
 
 	// 获取当前用户信息
 	const fetchCurrentUser = async () => {
@@ -364,6 +386,8 @@
 	// 页面加载时获取用户信息
 	onMounted(async () => {
 		await fetchCurrentUser();
+		// 获取修改次数
+		await fetchUpdateTimes();
 		// 获取分享解锁会员活动
 		await fetchShareActivity();
 	});
@@ -395,6 +419,8 @@
 	onPullDownRefresh(async () => {
 		console.log('用户页面下拉刷新');
 		await fetchCurrentUser();
+		// 刷新修改次数
+		await fetchUpdateTimes();
 		// 刷新分享解锁会员活动数据
 		await fetchShareActivity();
 		// 停止下拉刷新
@@ -788,17 +814,26 @@
 			});
 			return;
 		}
-		
+
 		// 判断前后是否变动，未变动则不触发接口
 		if (trimmedName === userName.value) {
 			isEditing.value = false;
 			return;
 		}
-		
+
+		// 检查剩余次数
+		if (remainingTimes.value <= 0) {
+			uni.showToast({
+				title: '今日修改次数已用完',
+				icon: 'none'
+			});
+			return;
+		}
+
 		// 更新用户名
 		userName.value = trimmedName;
 		isEditing.value = false;
-		
+
 		// 调用更新接口
 		await onUserNameUpdated(userName.value);
 	};
@@ -810,6 +845,15 @@
 	
 	// 选择头像
 	const chooseAvatar = () => {
+		// 检查剩余次数
+		if (remainingTimes.value <= 0) {
+			uni.showToast({
+				title: '今日修改次数已用完',
+				icon: 'none'
+			});
+			return;
+		}
+
 		uni.chooseImage({
 			count: 1,
 			sizeType: ['compressed'],
@@ -817,10 +861,10 @@
 			success: async (res) => {
 				const tempFilePaths = res.tempFilePaths;
 				const tempFilePath = tempFilePaths[0];
-				
+
 				// 使用 TOS 上传工具类上传图片
 				const uploadResult = await uploadFile(tempFilePath);
-				
+
 				if (uploadResult && uploadResult.fullImageUrl) {
 					// 更新头像显示
 					avatar.value = uploadResult.fullImageUrl;
@@ -841,12 +885,14 @@
 	const updateUserInfo = async (userData) => {
 		try {
 			const response = await updateUser(userData);
-			
+
 			if (response.code === 200) {
 				uni.showToast({
 					title: '更新成功',
 					icon: 'success'
 				});
+				// 更新成功后刷新修改次数
+				await fetchUpdateTimes();
 			} else {
 				uni.showToast({
 					title: response.msg || '更新失败',
@@ -1025,18 +1071,29 @@
 		border-radius: 8rpx;
 		font-size: 32rpx;
 		font-weight: 600;
-		color: #2c3e50;
-		background-color: rgba(255, 255, 255, 0.8);
+	}
+
+	/* 修改次数提示样式 */
+	.update-times-hint {
+		margin-top: 12rpx;
+		padding: 8rpx 16rpx;
+		background-color: rgba(24, 144, 255, 0.1);
+		border-radius: 8rpx;
+	}
+
+	.update-times-text {
+		font-size: 22rpx;
+		color: #1890ff;
 	}
 
 	/* 保存按钮样式 */
 	.save-btn {
-		padding: 12rpx 24rpx;
+		padding: 8rpx 16rpx;
 		background-color: #1890ff;
 		color: #fff;
 		border: none;
-		border-radius: 8rpx;
-		font-size: 28rpx;
+		border-radius: 6rpx;
+		font-size: 24rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
 	}

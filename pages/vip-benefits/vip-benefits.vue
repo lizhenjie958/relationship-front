@@ -20,12 +20,12 @@
 			<view v-if="isMember" class="vip-time-info">
 				<view class="time-item">
 					<text class="time-label">生效时间</text>
-					<text class="time-value">{{ memberInfo.enableTime || '-' }}</text>
+					<text class="time-value">{{ formatDateTime(memberInfo.enableTime) || '-' }}</text>
 				</view>
 				<view class="time-divider"></view>
 				<view class="time-item">
 					<text class="time-label">{{ isExpired ? '过期时间' : '有效期至' }}</text>
-					<text class="time-value" :class="{ 'expired-text': isExpired }">{{ memberInfo.expireTime || '-' }}</text>
+					<text class="time-value" :class="{ 'expired-text': isExpired }">{{ formatDateTime(memberInfo.expireTime) || '-' }}</text>
 				</view>
 			</view>
 			
@@ -92,6 +92,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onPullDownRefresh } from '@dcloudio/uni-app';
 import { queryMember } from '@/api/memberApi.js';
+import { formatDateTime } from '@/utils/request.js';
 
 // 会员信息
 const memberInfo = ref({

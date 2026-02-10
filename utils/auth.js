@@ -1,7 +1,6 @@
-// 使用Vite环境变量
-const domain = import.meta.env.VITE_API_DOMAIN || "http://60bj4820ma68.vicp.fun";
-
 // 动态导入 signUtil.js 避免循环依赖
+import { getBaseUrl } from "@/config/env.js";
+
 let signFunc = null;
 const getSign = () => {
     if (!signFunc) {
@@ -17,7 +16,8 @@ const USER_TYPE_KEY = 'wx_userType';
 
 // 获取存储的token
 export function getToken() {
-    return uni.getStorageSync(TOKEN_KEY);
+    return "S267hGjdmTtsa4EW7IMc5SLsZ8lIwKk9lA7SKFYwFoIuNvCWTfUx5qvLrcFueUpwgeZ56DoSIhfNipoweJjhlNSJ22s6XEXFPaDEJhHHIsc=";
+    // return uni.getStorageSync(TOKEN_KEY);
 }
 
 // 存储token
@@ -87,12 +87,12 @@ export async function loginByWechat(inviteCode = null) {
     }
 
     const timestamp = new Date().getTime();
-    const signature = getSign()(data, timestamp);
+    const signature = getSign()(timestamp);
 
     // 2. 调用后端登录接口
     const response = await new Promise((resolve, reject) => {
       uni.request({
-        url: domain + '/auth/loginByWx',
+        url: getBaseUrl() + '/auth/loginByWx',
         method: 'POST',
         data,
         header: {
@@ -146,11 +146,11 @@ export async function getCurrentUser() {
 
     const data = {};
     const timestamp = new Date().getTime();
-    const signature = getSign()(data, timestamp);
+    const signature = getSign()(timestamp);
 
     const response = await new Promise((resolve, reject) => {
       uni.request({
-        url: domain + '/user/currentUser',
+        url: getBaseUrl() + '/user/currentUser',
         method: 'POST',
         data,
         header: {

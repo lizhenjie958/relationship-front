@@ -17,3 +17,12 @@ export function maintainInviter(data = {}) {
     data
   });
 }
+
+// 获取用户修改次数
+export function getUpdateTimes(data = {}) {
+  return request({
+    url: '/user/getUpdateTimes',
+    method: 'POST',
+    data
+  });
+}

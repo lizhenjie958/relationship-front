@@ -67,7 +67,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { onPullDownRefresh } from '@dcloudio/uni-app';
-import { request } from '@/utils/request.js';
+import { request, formatDateTime } from '@/utils/request.js';
 import { queryExamPaperList, deleteExamPaper } from '@/api/examPaperApi.js';
 
 // 试卷数据
@@ -201,7 +201,7 @@ const fetchExamPapers = async () => {
 				name: item.protagonistInfoDTO.protagonist, // 主角姓名
 				avatar: item.protagonistInfoDTO.picUrl, // 主角头像
 				paperName: item.name, // 试卷名称
-				createTime: item.createTime // 创建时间
+				createTime: formatDateTime(item.createTime) // 创建时间
 			}));
 			// 初始化滑动状态
 			resetAllSwipe();
