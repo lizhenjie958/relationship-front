@@ -62,7 +62,6 @@
 						<text class="vip-desc">已解锁全部权益</text>
 					</view>
 				</view>
-				<view class="vip-badge">永久</view>
 			</view>
 		</view>
 
@@ -120,20 +119,71 @@
 			</view>
 		</view>
 		
-		<!-- 分享解锁会员权益 -->
-		<view class="share-section">
-			<view class="share-card">
-				<view class="share-header">
-					<text class="share-title">解锁会员权益</text>
-					<text class="share-badge">限时活动</text>
+		<!-- 分享解锁会员权益活动 -->
+		<view v-if="shareActivityData" class="share-activity-section">
+			<view class="share-activity-container">
+				<view class="share-activity-badge">限时活动</view>
+				<view class="share-activity-main">
+					<view class="share-activity-icon-wrap">
+						<text class="share-activity-emoji">🎁</text>
+					</view>
+					<view class="share-activity-info">
+						<text class="share-activity-name">邀请好友注册送会员</text>
+						<view class="share-activity-reward">
+							<text class="share-reward-label">完成得</text>
+							<text class="share-reward-highlight">{{ shareActivityData.reward }}{{ getRewardUnitText(shareActivityData.rewardUnitType) }}会员</text>
+						</view>
+					</view>
 				</view>
-				<view class="share-content">
-					<text class="share-desc">分享给26位好友注册，即可获得永久会员</text>
-					<text class="share-reward">永久会员权益</text>
+				
+				<!-- 进度条（已参加时显示） -->
+				<view v-if="hasParticipatedShare && participateShareRecord" class="share-activity-progress-detail">
+					<view class="share-progress-header">
+						<view class="share-progress-status">
+							<text class="share-status-badge" :class="{ 'completed': participateShareRecord.participateStatus === 2 }">
+								{{ getShareStatusText(participateShareRecord.participateStatus) }}
+							</text>
+							<text v-if="participateShareRecord.completeTime" class="share-complete-time">
+								完成于 {{ participateShareRecord.completeTime.split('T')[0] }}
+							</text>
+						</view>
+						<text class="share-progress-ratio">{{ participateShareRecord.currentIndicator }}/{{ shareActivityData.threshold }}人</text>
+					</view>
+					<view class="share-progress-bar-container">
+						<view class="share-progress-bar-bg">
+							<view class="share-progress-bar-fill" :style="{ width: getShareProgressPercent() + '%' }"></view>
+						</view>
+						<text class="share-progress-percent">{{ getShareProgressPercent() }}%</text>
+					</view>
 				</view>
-				<button class="share-button" @click="shareApp">
-					<text class="share-button-text">立即分享</text>
-				</button>
+
+				<!-- 活动信息（未参加或已参加都显示） -->
+				<view class="share-activity-progress">
+					<view class="share-progress-info">
+						<view class="share-progress-item">
+							<text class="share-progress-label">目标</text>
+							<text class="share-progress-value">{{ shareActivityData.threshold }}人</text>
+						</view>
+						<view class="share-progress-divider"></view>
+						<view class="share-progress-item">
+							<text class="share-progress-label">时间</text>
+							<text class="share-progress-value">{{ shareActivityData.startDate }} 至 {{ shareActivityData.endDate }}</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 参加活动按钮（未参加时显示） -->
+				<view v-if="!hasParticipatedShare" class="share-activity-action">
+					<button
+						class="share-participate-btn"
+						:disabled="participateShareLoading"
+						:class="{ 'loading': participateShareLoading }"
+						@click="handleParticipateShare"
+					>
+						<text v-if="participateShareLoading" class="share-btn-loading-text">参加中...</text>
+						<text v-else class="share-btn-text">立即参加</text>
+					</button>
+				</view>
 			</view>
 		</view>
 		
@@ -158,7 +208,7 @@
 						<view class="qr-container">
 							<image :src="qrCodeUrl" class="qr-image" mode="aspectFit" />
 						</view>
-						<text class="qr-tip">扫码邀请好友</text>
+						<text class="qr-tip">邀请好友扫码</text>
 					</view>
 
 					<!-- 邀请码展示 -->
@@ -246,6 +296,7 @@
 	import { getCurrentUser, getUserId, setUserType } from '@/utils/auth.js';
 	import { uploadFile } from '@/utils/upload.js';
 	import { updateUser, maintainInviter } from '@/api/userApi.js';
+	import { queryCurrentActivity, participateActivity, queryParticipateRecord } from '@/api/activityApi.js';
 
 	// 用户类型 0-普通用户 1-会员 2-非会员
 	const userType = ref(0);
@@ -269,6 +320,13 @@
 	const showInviteCodeDialog = ref(false);
 	const showScanDialog = ref(false);
 	const inputInviteCode = ref('');
+
+	// 分享解锁会员活动数据
+	const shareActivityData = ref(null);
+	const shareActivityId = ref(null);
+	const hasParticipatedShare = ref(false);
+	const participateShareLoading = ref(false);
+	const participateShareRecord = ref(null);
 
 	// 获取当前用户信息
 	const fetchCurrentUser = async () => {
@@ -306,6 +364,8 @@
 	// 页面加载时获取用户信息
 	onMounted(async () => {
 		await fetchCurrentUser();
+		// 获取分享解锁会员活动
+		await fetchShareActivity();
 	});
 
 	// 页面加载时处理参数
@@ -335,6 +395,10 @@
 	onPullDownRefresh(async () => {
 		console.log('用户页面下拉刷新');
 		await fetchCurrentUser();
+		// 刷新分享解锁会员活动数据
+		await fetchShareActivity();
+		// 停止下拉刷新
+		uni.stopPullDownRefresh();
 	});
 
 	// 打开邀请码弹窗
@@ -550,6 +614,127 @@
 		});
 	};
 	
+	// 获取分享解锁会员活动
+	const fetchShareActivity = async () => {
+		try {
+			const response = await queryCurrentActivity({
+				channelCode: 'c8z85k'
+			});
+			console.log('分享活动数据:', response);
+			if (response.code === 200 && response.data) {
+				shareActivityData.value = response.data;
+				shareActivityId.value = response.data.id;
+				// 获取到活动ID后，查询参加记录
+				await fetchShareParticipateRecord();
+			}
+		} catch (error) {
+			console.error('获取分享活动数据失败:', error);
+		}
+	};
+
+	// 获取分享活动参加记录
+	const fetchShareParticipateRecord = async () => {
+		if (!shareActivityId.value) return;
+		try {
+			const response = await queryParticipateRecord({
+				activityId: shareActivityId.value
+			});
+			console.log('分享活动参加记录:', response);
+			if (response.code === 200 && response.data) {
+				participateShareRecord.value = response.data;
+				// 有参加记录则表示已参加
+				hasParticipatedShare.value = true;
+			} else {
+				// 没有参加记录
+				participateShareRecord.value = null;
+				hasParticipatedShare.value = false;
+			}
+		} catch (error) {
+			console.error('获取分享活动参加记录失败:', error);
+			participateShareRecord.value = null;
+			hasParticipatedShare.value = false;
+		}
+	};
+
+	// 参加分享活动
+	const handleParticipateShare = async () => {
+		if (!shareActivityId.value) {
+			uni.showToast({
+				title: '活动信息获取失败',
+				icon: 'none'
+			});
+			return;
+		}
+
+		// 先提示用户需要点击右上角分享
+		uni.showModal({
+			title: '分享解锁会员',
+			content: '请点击右上角的「...」按钮，选择「发送给朋友」或「分享到朋友圈」，分享此应用给好友，超过' + (shareActivityData.value?.threshold || 26) + '位好友注册即可获得永久会员权益！',
+			confirmText: '我知道了',
+			showCancel: false,
+			success: async (res) => {
+				if (res.confirm) {
+					// 用户确认后，调用参加接口
+					participateShareLoading.value = true;
+					try {
+						const response = await participateActivity({
+							activityId: shareActivityId.value
+						});
+						console.log('参加分享活动结果:', response);
+						if (response.code === 200) {
+							uni.showToast({
+								title: '参加成功',
+								icon: 'success'
+							});
+							// 参加成功后重新获取参加记录
+							await fetchShareParticipateRecord();
+						} else {
+							uni.showToast({
+								title: response.msg || '参加失败',
+								icon: 'none'
+							});
+						}
+					} catch (error) {
+						console.error('参加分享活动失败:', error);
+						uni.showToast({
+							title: '参加失败，请重试',
+							icon: 'none'
+						});
+					} finally {
+						participateShareLoading.value = false;
+					}
+				}
+			}
+		});
+	};
+
+	// 计算分享活动进度百分比
+	const getShareProgressPercent = () => {
+		if (!shareActivityData.value || !participateShareRecord.value) return 0;
+		const threshold = shareActivityData.value.threshold || 1;
+		const current = participateShareRecord.value.currentIndicator || 0;
+		return Math.min(Math.round((current / threshold) * 100), 100);
+	};
+
+	// 获取分享活动状态文本
+	const getShareStatusText = (status) => {
+		const statusMap = {
+			1: '进行中',
+			2: '已完成'
+		};
+		return statusMap[status] || '未知';
+	};
+
+	// 获取奖励单位文本
+	const getRewardUnitText = (unitType) => {
+		const unitMap = {
+			1: '天',
+			2: '月',
+			3: '年'
+		};
+		return unitMap[unitType] || '天';
+	};
+
 	// 分享应用
 	const shareApp = () => {
 		uni.showModal({
@@ -870,13 +1055,13 @@
 	}
 
 	.vip-card {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: linear-gradient(135deg, #8aa4f0 0%, #a78bc8 100%);
 		border-radius: 20rpx;
 		padding: 32rpx;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		box-shadow: 0 8rpx 32rpx rgba(138, 164, 240, 0.25);
 		transition: all 0.3s ease;
 	}
 
@@ -1103,87 +1288,256 @@
 	border: none;
 }
 
-/* 分享解锁会员权益 */
-	.share-section {
+/* 分享活动区域样式 - 紫色/粉色主题 */
+	.share-activity-section {
 		margin-bottom: 40rpx;
 	}
-	
-	.share-card {
-		background: linear-gradient(135deg, #f0f5ff 0%, #f9f0ff 100%);
-		border-radius: 24rpx;
-		padding: 40rpx;
-		box-shadow: 0 4rpx 16rpx rgba(114, 46, 209, 0.2);
+
+	.share-activity-container {
+		background: linear-gradient(135deg, #a78bc8 0%, #e89bc0 100%);
+		border-radius: 20rpx;
+		padding: 28rpx;
+		box-shadow: 0 8rpx 24rpx rgba(167, 139, 200, 0.2);
+		position: relative;
+		overflow: hidden;
 	}
-	
-	.share-header {
+
+	/* 装饰背景 */
+	.share-activity-container::before {
+		content: '';
+		position: absolute;
+		top: -50%;
+		right: -20%;
+		width: 200rpx;
+		height: 200rpx;
+		background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+		border-radius: 50%;
+	}
+
+	.share-activity-badge {
+		position: absolute;
+		top: 16rpx;
+		right: 16rpx;
+		background: rgba(255, 255, 255, 0.9);
+		color: #a78bc8;
+		font-size: 20rpx;
+		font-weight: 600;
+		padding: 6rpx 14rpx;
+		border-radius: 20rpx;
+	}
+
+	.share-activity-main {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 24rpx;
+		gap: 20rpx;
+		margin-bottom: 20rpx;
 	}
-	
-	.share-title {
-		font-size: 36rpx;
+
+	.share-activity-icon-wrap {
+		width: 88rpx;
+		height: 88rpx;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 20rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.share-activity-emoji {
+		font-size: 44rpx;
+	}
+
+	.share-activity-info {
+		flex: 1;
+	}
+
+	.share-activity-name {
+		font-size: 30rpx;
 		font-weight: 700;
-		color: #722ed1;
-	}
-	
-	.share-badge {
-		padding: 8rpx 16rpx;
-		background-color: rgba(114, 46, 209, 0.1);
-		border-radius: 16rpx;
-		font-size: 20rpx;
-		color: #722ed1;
-	}
-	
-	.share-content {
-		margin-bottom: 32rpx;
-	}
-	
-	.share-desc {
-		font-size: 24rpx;
-		color: #666;
+		color: #ffffff;
+		display: block;
 		margin-bottom: 8rpx;
-		display: block;
 	}
-	
-	.share-reward {
-		font-size: 32rpx;
-		font-weight: 600;
-		color: #722ed1;
-		display: block;
+
+	.share-activity-reward {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+		margin-top: 4rpx;
 	}
-	
-	.share-button {
-		width: 100%;
-		padding: 24rpx;
-		background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
-		color: #fff;
-		border: none;
+
+	.share-reward-label {
+		font-size: 22rpx;
+		color: rgba(255, 255, 255, 0.9);
+		background: rgba(255, 255, 255, 0.2);
+		padding: 4rpx 12rpx;
+		border-radius: 8rpx;
+	}
+
+	.share-reward-highlight {
+		font-size: 36rpx;
+		font-weight: 800;
+		color: #ffd700;
+		text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+	}
+
+	.share-activity-progress {
+		background: rgba(255, 255, 255, 0.15);
 		border-radius: 16rpx;
-		font-size: 28rpx;
+		padding: 20rpx 24rpx;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.share-progress-info {
+		display: flex;
+		align-items: center;
+		gap: 24rpx;
+	}
+
+	.share-progress-item {
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+	}
+
+	.share-progress-label {
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.share-progress-value {
+		font-size: 26rpx;
+		color: #ffffff;
 		font-weight: 600;
+	}
+
+	.share-progress-divider {
+		width: 2rpx;
+		height: 40rpx;
+		background: rgba(255, 255, 255, 0.3);
+	}
+
+	/* 进度条详情 */
+	.share-activity-progress-detail {
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 16rpx;
+		padding: 24rpx;
+		margin-bottom: 20rpx;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.share-progress-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 16rpx;
+	}
+
+	.share-progress-status {
+		display: flex;
+		align-items: center;
+		gap: 12rpx;
+	}
+
+	.share-status-badge {
+		font-size: 20rpx;
+		color: #ffffff;
+		background: rgba(167, 139, 200, 0.8);
+		padding: 4rpx 12rpx;
+		border-radius: 8rpx;
+		font-weight: 500;
+	}
+
+	.share-status-badge.completed {
+		background: rgba(82, 196, 26, 0.8);
+	}
+
+	.share-complete-time {
+		font-size: 20rpx;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.share-progress-ratio {
+		font-size: 24rpx;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	.share-progress-bar-container {
+		display: flex;
+		align-items: center;
+		gap: 16rpx;
+	}
+
+	.share-progress-bar-bg {
+		flex: 1;
+		height: 16rpx;
+		background: rgba(255, 255, 255, 0.2);
+		border-radius: 8rpx;
+		overflow: hidden;
+	}
+
+	.share-progress-bar-fill {
+		height: 100%;
+		background: linear-gradient(90deg, #ffd700 0%, #ffaa00 100%);
+		border-radius: 8rpx;
+		transition: width 0.5s ease;
+	}
+
+	.share-progress-percent {
+		font-size: 24rpx;
+		color: #ffd700;
+		font-weight: 700;
+		min-width: 60rpx;
+		text-align: right;
+	}
+
+	/* 参加活动按钮区域 */
+	.share-activity-action {
+		margin-top: 24rpx;
+		display: flex;
+		justify-content: center;
+	}
+
+	.share-participate-btn {
+		width: 100%;
+		height: 80rpx;
+		background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+		border-radius: 40rpx;
+		border: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4rpx 16rpx rgba(255, 215, 0, 0.4);
 		transition: all 0.3s ease;
-		box-shadow: 0 4rpx 16rpx rgba(114, 46, 209, 0.3);
 	}
-	
-	.share-button:hover {
-		transform: translateY(-2rpx);
-		box-shadow: 0 8rpx 24rpx rgba(114, 46, 209, 0.4);
+
+	.share-participate-btn:active:not(.loading) {
+		transform: scale(0.98);
+		box-shadow: 0 2rpx 8rpx rgba(255, 215, 0, 0.3);
 	}
-	
-	.share-button:active {
-		transform: translateY(0);
+
+	.share-participate-btn.loading {
+		opacity: 0.8;
 	}
-	
-	.share-button-text {
-		line-height: 1;
+
+	.share-participate-btn .share-btn-text {
+		font-size: 30rpx;
+		font-weight: 700;
+		color: #a78bc8;
+	}
+
+	.share-participate-btn .share-btn-loading-text {
+		font-size: 30rpx;
+		font-weight: 600;
+		color: #666;
 	}
 	
 	/* 版本信息 */
 	.version-info {
 		text-align: center;
-		padding: 20rpx 0;
+		padding: 20rpx 0 100rpx;
 	}
 
 	.version-text {

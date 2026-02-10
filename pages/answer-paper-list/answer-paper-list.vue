@@ -71,14 +71,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onPullDownRefresh } from '@dcloudio/uni-app';
-import { request } from '@/utils/request.js';
 import { queryAnswerPaperList } from '@/api/answerPaperApi.js';
 
 // Tab配置
 const tabs = [
 	{ label: '进行中', value: 'ongoing' },
 	{ label: '已完成', value: 'completed' },
-	{ label: '已超时/已放弃', value: 'expired' }
+	{ label: '超时/放弃', value: 'expired' }
 ];
 
 // 当前激活的Tab
@@ -104,7 +103,7 @@ const fetchAnswers = async () => {
 			// 已完成
 			requestParams = { answerStatus: 2 }; // COMPLETED
 		} else if (activeTab.value === 'expired') {
-			// 已超时/已放弃 - 使用answerStatusList查询多个状态
+			// 超时/放弃 - 使用answerStatusList查询多个状态
 			requestParams = { answerStatusList: [3, 4] }; // GIVEN_UP(3), TIMED_OUT(4)
 		}
 		

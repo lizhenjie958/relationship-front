@@ -2,7 +2,7 @@
 	<view class="question-record">
 		
 		<!-- 试卷信息区域 -->
-		<view class="paper-info">
+		<view class="paper-info" v-if="!loading && !loadError">
 			<view class="info-card">
 				<view class="info-item">
 					<text class="info-label">试卷名称：</text>
@@ -29,6 +29,9 @@
 					<button class="action-btn view-share-btn" @click="handleViewShareRecord">
 						<text class="btn-text">分享记录</text>
 					</button>
+					<button class="action-btn claim-btn-self" @click="handleClaim">
+						<text class="btn-text">认领试卷</text>
+					</button>
 				</view>
 				
 				<!-- 认领按钮 - 非出题人显示 -->
@@ -38,6 +41,18 @@
 					</button>
 				</view>
 			</view>
+		</view>
+
+		<!-- 加载状态 -->
+		<view v-if="loading" class="loading-container">
+			<view class="loading-spinner"></view>
+			<text class="loading-text">加载中...</text>
+		</view>
+
+		<!-- 加载失败状态 -->
+		<view v-if="loadError" class="error-container">
+			<view class="error-icon">⚠️</view>
+			<text class="error-text">加载失败，请下拉刷新重试</text>
 		</view>
 		
 		<!-- 题目信息组件 -->
@@ -53,6 +68,7 @@
 
 <script setup>
 	import { ref, onMounted } from 'vue';
+import { onPullDownRefresh } from '@dcloudio/uni-app';
 import QuestionInfo from '@/components/QuestionInfo.vue';
 import { getExamPaperDetail, claimExamPaper, changeClaimStatus } from '@/api/examPaperApi.js';
 import { addShareRecord } from '@/api/shareApi.js';
@@ -88,6 +104,10 @@ import { getUserId } from '@/utils/auth.js';
 	const answerStatus = ref('');
 	// 试卷认领状态 0-未开启 1-可领取 2-不可领取
 	const claimStatus = ref(0);
+	// 加载状态
+	const loading = ref(true);
+	// 加载错误状态
+	const loadError = ref(false);
 	
 	// 获取试卷详情
 	const fetchPaperDetail = async () => {
@@ -96,8 +116,13 @@ import { getUserId } from '@/utils/auth.js';
 				title: '试卷ID不能为空',
 				icon: 'none'
 			});
+			loading.value = false;
+			loadError.value = true;
 			return;
 		}
+		
+		loading.value = true;
+		loadError.value = false;
 		
 		try {
 			const response = await getExamPaperDetail({
@@ -125,11 +150,13 @@ import { getUserId } from '@/utils/auth.js';
 				questions.value = data.questionDTOList;
 				console.log('Fetched questions:', questions.value);
 				console.log('Current user is examiner:', isExaminer.value);
+				loadError.value = false;
 			} else {
 				uni.showToast({
 					title: '获取试卷详情失败',
 					icon: 'none'
 				});
+				loadError.value = true;
 			}
 		} catch (error) {
 			console.error('获取试卷详情失败:', error);
@@ -137,8 +164,18 @@ import { getUserId } from '@/utils/auth.js';
 				title: '获取试卷详情失败',
 				icon: 'none'
 			});
+			loadError.value = true;
+		} finally {
+			loading.value = false;
+			uni.stopPullDownRefresh();
 		}
 	};
+
+	// 页面下拉刷新
+	onPullDownRefresh(async () => {
+		console.log('试卷详情页面下拉刷新');
+		await fetchPaperDetail();
+	});
 	
 	// 生成随机UUID（去除-）
 	const generateUUID = () => {
@@ -441,6 +478,11 @@ onMounted(async () => {
 		color: #fff;
 	}
 
+	.claim-btn-self {
+		background: linear-gradient(135deg, #a78bc8 0%, #c9a8e0 100%);
+		color: #fff;
+	}
+
 	.action-btn:active {
 		transform: scale(0.98);
 		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
@@ -667,6 +709,59 @@ onMounted(async () => {
 		background-color: #1890ff;
 	}
 	
+	/* 加载状态 */
+	.loading-container {
+		padding: 120rpx 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 24rpx;
+	}
+
+	.loading-spinner {
+		width: 64rpx;
+		height: 64rpx;
+		border: 4rpx solid #e9ecef;
+		border-top-color: #1890ff;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	.loading-text {
+		font-size: 28rpx;
+		color: #8c8c8c;
+		font-weight: 500;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* 错误状态 */
+	.error-container {
+		padding: 160rpx 48rpx;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 24rpx;
+	}
+
+	.error-icon {
+		font-size: 80rpx;
+		opacity: 0.8;
+	}
+
+	.error-text {
+		font-size: 28rpx;
+		color: #8c8c8c;
+		font-weight: 500;
+		text-align: center;
+	}
+
 	/* 响应式设计 */
 	@media (max-width: 750rpx) {
 		.question-record {

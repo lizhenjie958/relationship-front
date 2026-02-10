@@ -24,3 +24,8 @@ export function updateRelationship(data = {}){
 export function generateExamPaper(data = {}){
 	return request({url:"/examPaper/generate",data})
 }
+
+// 复制关系
+export function copyRelationship(data = {}){
+	return request({url:"/relationship/copy",data})
+}

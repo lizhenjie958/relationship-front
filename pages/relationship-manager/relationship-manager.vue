@@ -8,8 +8,8 @@
 
 		<view v-else>
 
-		<!-- 编辑禁用提示 -->
-		<view v-if="editDisabled && relationshipId" class="disabled-tip">
+		<!-- 编辑禁用提示 - 只在非只读模式下显示 -->
+		<view v-if="editDisabled && relationshipId && !readonlyMode" class="disabled-tip">
 			<text class="disabled-icon">⚠️</text>
 			<text class="disabled-text">获取详情失败，禁止编辑</text>
 			<button class="refresh-btn" @click="fetchRelationshipDetail(relationshipId)">
@@ -118,20 +118,23 @@
 						</view>
 					</view>
 					<view class="table-cell action-col">
-						<view class="action-buttons">
-							<button class="action-btn add-btn" @click="!editDisabled && addRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
-								<text class="btn-icon">+</text>
-							</button>
-							<button class="action-btn delete-btn" @click="!editDisabled && deleteRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
-								<text class="btn-icon">-</text>
-							</button>
-						</view>
+						<view class="action-buttons" v-if="!readonlyMode">
+						<button class="action-btn add-btn" @click="!editDisabled && addRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
+							<text class="btn-icon">+</text>
+						</button>
+						<button class="action-btn delete-btn" @click="!editDisabled && deleteRow(index)" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
+							<text class="btn-icon">-</text>
+						</button>
+					</view>
+					<view class="action-buttons" v-else>
+						<text class="readonly-text">只读</text>
+					</view>
 					</view>
 				</view>
 			</view>
 		</view>
 
-		<view class="footer">
+		<view class="footer" v-if="!readonlyMode">
 			<button class="save-btn" @click="saveData" :disabled="editDisabled" :class="{ 'disabled': editDisabled }">
 				<text class="save-btn-text">保存</text>
 			</button>
@@ -171,6 +174,8 @@
 
 	// 当前编辑的关系ID
 	const relationshipId = ref(null);
+	// 只读模式（从通用关系查看时使用）
+	const readonlyMode = ref(false);
 	// 编辑禁用状态
 	const editDisabled = ref(false);
 	// 加载状态
@@ -181,6 +186,11 @@
 		if (options.id) {
 			// 有ID参数，说明是编辑操作
 			relationshipId.value = options.id;
+			// 检查是否是只读模式
+			if (options.readonly === 'true') {
+				readonlyMode.value = true;
+				editDisabled.value = true;
+			}
 			// 调用查询详情接口获取数据
 			fetchRelationshipDetail(options.id);
 		}
@@ -211,8 +221,10 @@
 				} else {
 					relationList.value = [{ relation: '', avatar: '' }];
 				}
-				// 获取成功，允许编辑
-				editDisabled.value = false;
+				// 获取成功，如果不是只读模式则允许编辑
+				if (!readonlyMode.value) {
+					editDisabled.value = false;
+				}
 			} else {
 				uni.showToast({ 
 					title: '获取详情失败，禁止编辑', 
@@ -1131,6 +1143,13 @@
 	.save-btn-text {
 		font-size: 32rpx;
 		font-weight: 600;
+	}
+
+	/* 只读文本 */
+	.readonly-text {
+		font-size: 24rpx;
+		color: var(--text-color-light);
+		font-style: italic;
 	}
 
 	/* 响应式设计 */

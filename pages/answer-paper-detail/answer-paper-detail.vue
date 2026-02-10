@@ -214,32 +214,8 @@ const statusClassMap = {
 
 // 切换显示答案
 const toggleShowAnswer = async () => {
-	// 会员直接显示答案
-	if (isMember.value && !isExpired.value) {
-		showAnswer.value = !showAnswer.value;
-		return;
-	}
-	
-	// 非会员，弹出广告弹窗
-	uni.showModal({
-		title: '解锁答案',
-		content: '观看完广告即可查看答案，中途关闭将无法查看。',
-		confirmText: '观看广告',
-		cancelText: '取消',
-		success: (res) => {
-			if (res.confirm) {
-				// 用户选择观看广告
-				uni.showLoading({ title: '广告加载中...', mask: true });
-				
-				// 创建或展示激励视频广告
-				if (!videoAd) {
-					createRewardedVideoAd();
-				}
-				
-				showRewardedVideoAd();
-			}
-		}
-	});
+	// 直接显示答案，不接入广告
+	showAnswer.value = !showAnswer.value;
 };
 
 	// 重新领取

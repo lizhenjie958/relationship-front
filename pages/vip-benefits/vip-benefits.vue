@@ -123,18 +123,6 @@ const benefits = [
 		desc: '享受纯净无广告体验',
 		icon: '🚫',
 		iconClass: 'no-ads'
-	},
-	{
-		title: '领取试卷',
-		desc: '可领取自己出的试卷',
-		icon: '📋',
-		iconClass: 'exam'
-	},
-	{
-		title: '无限创建',
-		desc: '主角创建数量无限制',
-		icon: '∞',
-		iconClass: 'unlimited'
 	}
 ];
 
@@ -195,23 +183,23 @@ const navigateToRecords = () => {
 
 /* 会员状态卡片 */
 .vip-status-card {
-	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	background: linear-gradient(135deg, #8aa4f0 0%, #a78bc8 100%);
 	border-radius: 28rpx;
 	padding: 40rpx;
 	margin-bottom: 30rpx;
-	box-shadow: 0 12rpx 40rpx rgba(102, 126, 234, 0.35);
+	box-shadow: 0 12rpx 40rpx rgba(138, 164, 240, 0.3);
 	position: relative;
 	overflow: hidden;
 }
 
 .vip-status-card.is-member {
-	background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
-	box-shadow: 0 12rpx 40rpx rgba(255, 215, 0, 0.35);
+	background: linear-gradient(135deg, #ffe066 0%, #ffc53d 100%);
+	box-shadow: 0 12rpx 40rpx rgba(255, 224, 102, 0.3);
 }
 
 .vip-status-card.is-expired {
-	background: linear-gradient(135deg, #a8a8a8 0%, #7a7a7a 100%);
-	box-shadow: 0 12rpx 40rpx rgba(120, 120, 120, 0.3);
+	background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
+	box-shadow: 0 12rpx 40rpx rgba(160, 160, 160, 0.25);
 }
 
 /* 装饰背景 */

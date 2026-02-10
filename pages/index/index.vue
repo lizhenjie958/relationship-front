@@ -83,7 +83,7 @@
 						<text class="activity-emoji">🎁</text>
 					</view>
 					<view class="activity-info">
-						<text class="activity-name">答题签到送会员</text>
+						<text class="activity-name">完成答题送会员</text>
 						<view class="activity-reward">
 							<text class="reward-label">完成得</text>
 							<text class="reward-highlight">{{ activityData.reward }}{{ getRewardUnitText(activityData.rewardUnitType) }}会员</text>

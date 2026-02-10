@@ -43,7 +43,8 @@
 		{
 			"path": "pages/exam-paper-detail/exam-paper-detail",
 			"style": {
-				"navigationBarTitleText": "试卷详情"
+				"navigationBarTitleText": "试卷详情",
+				"enablePullDownRefresh": true
 			}
 		},
 		{

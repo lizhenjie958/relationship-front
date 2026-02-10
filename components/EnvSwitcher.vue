@@ -45,24 +45,22 @@ const envList = [
 	{
 		key: 'dev',
 		name: '开发环境',
-		url: 'http://127.0.0.1:8888'
+		url: 'http://60bj4820ma68.vicp.fun'
 	},
 	{
-		key: 'test',
-		name: '测试环境',
-		url: 'http://60bj4820ma68.vicp.fun'
+		key: 'prod',
+		name: '生产环境',
+		url: 'http://muchunfeng.top'
 	}
 ];
 
 // 是否为生产环境
 const isProduction = computed(() => {
 	// 通过判断当前API域名是否为生产环境
-	const currentUrl = import.meta.env.VITE_API_DOMAIN || '';
+	const currentUrl = import.meta.env.VITE_API_DOMAIN || "http://60bj4820ma68.vicp.fun";
 	// 如果当前是生产环境域名，则不显示切换器
 	// 这里假设生产环境域名不包含 localhost 或 vicp.fun
-	return !currentUrl.includes('localhost') && 
-		   !currentUrl.includes('127.0.0.1') && 
-		   !currentUrl.includes('vicp.fun');
+	return currentUrl.includes('muchunfeng.top');
 });
 
 // 当前环境
