@@ -102,10 +102,6 @@
 					<text class="function-title">我的邀请码</text>
 					<text class="function-desc">{{ hasInviter ? '已绑定邀请人 ✓' : '邀请好友获奖励' }}</text>
 				</view>
-				<!-- 已绑定标识 -->
-				<view v-if="hasInviter" class="bound-indicator">
-					<view class="bound-dot"></view>
-				</view>
 			</view>
 
 			<!-- 联系客服 -->
@@ -963,8 +959,8 @@ const inviterInfo = ref(null);
     onShareAppMessage(() => {
 		const sharePath = `/pages/index/index?inviteCode=${inviteCode.value}`;
 		return {
-			title: '推荐一款好用的学习工具',
-			desc: '快来和我一起学习，分享即可获得永久会员权益！超过26位好友注册即可获得永久会员权益！',
+			title: '推荐一款好玩的小工具',
+			desc: '快来和我一起玩，分享更有机会获得会员权益！',
 			path: sharePath,
 			imageUrl: ''
 		};
@@ -974,8 +970,8 @@ const inviterInfo = ref(null);
 	onShareTimeline(()=>{
 		const sharePath = `/pages/index/index?inviteCode=${inviteCode.value}`;
 		return {
-			title: '推荐一款好用的学习工具',
-			desc: '快来和我一起学习，分享即可获得永久会员权益！超过26位好友注册即可获得永久会员权益！',
+			title: '推荐一款好玩的小工具',
+			desc: '快来和我一起玩，分享更有机会获得会员权益！',
 			path: sharePath,
 			imageUrl: ''
 		};
@@ -1334,34 +1330,6 @@ const inviterInfo = ref(null);
 	
 	.arrow-text {
 		font-size: 28rpx;
-	}
-
-	/* 已绑定标识 */
-	.bound-indicator {
-		position: absolute;
-		right: 60rpx;
-		top: 50%;
-		transform: translateY(-50%);
-	}
-
-	.bound-dot {
-		width: 16rpx;
-		height: 16rpx;
-		background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
-		border-radius: 50%;
-		box-shadow: 0 0 8rpx rgba(82, 196, 26, 0.5);
-		animation: pulse 2s ease-in-out infinite;
-	}
-
-	@keyframes pulse {
-		0%, 100% {
-			transform: scale(1);
-			opacity: 1;
-		}
-		50% {
-			transform: scale(1.2);
-			opacity: 0.8;
-		}
 	}
 
 /* 联系客服按钮 */
