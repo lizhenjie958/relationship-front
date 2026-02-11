@@ -26,3 +26,12 @@ export function getUpdateTimes(data = {}) {
     data
   });
 }
+
+// 查询邀请人信息
+export function queryInviter(data = {}) {
+  return request({
+    url: '/user/queryInviter',
+    method: 'POST',
+    data
+  });
+}

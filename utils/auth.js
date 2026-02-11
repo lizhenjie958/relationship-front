@@ -16,8 +16,8 @@ const USER_TYPE_KEY = 'wx_userType';
 
 // 获取存储的token
 export function getToken() {
-    return "S267hGjdmTtsa4EW7IMc5SLsZ8lIwKk9lA7SKFYwFoIuNvCWTfUx5qvLrcFueUpwgeZ56DoSIhfNipoweJjhlNSJ22s6XEXFPaDEJhHHIsc=";
-    // return uni.getStorageSync(TOKEN_KEY);
+    // return "S267hGjdmTtsa4EW7IMc5SLsZ8lIwKk9lA7SKFYwFoIuNvCWTfUx5qvLrcFueUpwgeZ56DoSIhfNipoweJjhlNSJ22s6XEXFPaDEJhHHIsc=";
+    return uni.getStorageSync(TOKEN_KEY);
 }
 
 // 存储token

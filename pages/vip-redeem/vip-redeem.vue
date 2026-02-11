@@ -6,6 +6,24 @@
 			<text class="header-desc">输入兑换码获取会员权益</text>
 		</view>
 
+		<!-- 邀请人信息卡片 -->
+		<view class="inviter-section" v-if="!queryInviterLoading">
+			<view class="inviter-card" :class="{ 'has-inviter': inviterInfo }">
+				<view class="inviter-header">
+					<text class="inviter-icon">👤</text>
+					<view class="inviter-info">
+						<text class="inviter-label">{{ inviterInfo ? '已绑定邀请人' : '未绑定邀请人' }}</text>
+						<text v-if="inviterInfo" class="inviter-name">{{ inviterInfo.inviterName || '未知' }}</text>
+						<text v-else class="inviter-tip">绑定邀请人可获得额外奖励</text>
+					</view>
+				</view>
+				<view v-if="inviterInfo" class="inviter-code">
+					<text class="code-label">邀请码:</text>
+					<text class="code-value">{{ inviterInfo.inviteCode }}</text>
+				</view>
+			</view>
+		</view>
+
 		<!-- 兑换输入区域 -->
 		<view class="redeem-section">
 			<view class="input-card">
@@ -63,8 +81,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { redeemMember } from '@/api/memberApi.js';
+import { queryInviter } from '@/api/userApi.js';
 
 // 兑换码
 const redeemCode = ref('');
@@ -72,6 +91,35 @@ const redeemCode = ref('');
 const errorMsg = ref('');
 // 加载状态
 const isLoading = ref(false);
+// 邀请人信息
+const inviterInfo = ref(null);
+// 查询邀请人加载状态
+const queryInviterLoading = ref(false);
+
+// 页面加载时查询邀请人信息
+onMounted(async () => {
+	await fetchInviterInfo();
+});
+
+// 查询邀请人信息
+const fetchInviterInfo = async () => {
+	queryInviterLoading.value = true;
+	try {
+		const response = await queryInviter({});
+		if (response.code === 200) {
+			// data为null表示没有邀请人
+			if (response.data) {
+				inviterInfo.value = response.data;
+			} else {
+				inviterInfo.value = null;
+			}
+		}
+	} catch (error) {
+		console.error('查询邀请人信息失败:', error);
+	} finally {
+		queryInviterLoading.value = false;
+	}
+};
 
 // 处理兑换
 const handleRedeem = async () => {
@@ -154,6 +202,90 @@ const handleRedeem = async () => {
 	font-size: 28rpx;
 	color: #666;
 	display: block;
+}
+
+/* 邀请人信息区域 */
+.inviter-section {
+	margin-bottom: 30rpx;
+}
+
+.inviter-card {
+	background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+	border-radius: 20rpx;
+	padding: 30rpx;
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+	transition: all 0.3s ease;
+}
+
+.inviter-card.has-inviter {
+	background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+	box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.15);
+}
+
+.inviter-header {
+	display: flex;
+	align-items: center;
+	gap: 20rpx;
+}
+
+.inviter-icon {
+	width: 64rpx;
+	height: 64rpx;
+	background: rgba(255, 255, 255, 0.8);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 32rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.inviter-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+}
+
+.inviter-label {
+	font-size: 26rpx;
+	color: #666;
+	font-weight: 500;
+}
+
+.inviter-name {
+	font-size: 32rpx;
+	color: #4caf50;
+	font-weight: 700;
+}
+
+.inviter-tip {
+	font-size: 24rpx;
+	color: #999;
+}
+
+.inviter-code {
+	margin-top: 20rpx;
+	padding-top: 20rpx;
+	border-top: 2rpx solid rgba(0, 0, 0, 0.06);
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.code-label {
+	font-size: 24rpx;
+	color: #666;
+}
+
+.code-value {
+	font-size: 28rpx;
+	color: #333;
+	font-weight: 600;
+	font-family: 'Courier New', monospace;
+	background: rgba(255, 255, 255, 0.6);
+	padding: 8rpx 16rpx;
+	border-radius: 8rpx;
 }
 
 /* 兑换区域 */

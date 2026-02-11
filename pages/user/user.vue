@@ -144,7 +144,11 @@
 				<view v-if="hasParticipatedShare && participateShareRecord" class="share-activity-progress-detail">
 					<view class="share-progress-header">
 						<view class="share-progress-status">
-							<text class="share-status-badge" :class="{ 'completed': participateShareRecord.participateStatus === 2 }">
+							<text class="share-status-badge" :class="{ 
+								'completed': participateShareRecord.participateStatus === 2,
+								'settled': participateShareRecord.participateStatus === 3,
+								'invalid': participateShareRecord.participateStatus === 4
+							}">
 								{{ getShareStatusText(participateShareRecord.participateStatus) }}
 							</text>
 							<text v-if="participateShareRecord.completeTime" class="share-complete-time">
@@ -158,6 +162,10 @@
 							<view class="share-progress-bar-fill" :style="{ width: getShareProgressPercent() + '%' }"></view>
 						</view>
 						<text class="share-progress-percent">{{ getShareProgressPercent() }}%</text>
+					</view>
+					<!-- 状态提示 -->
+					<view v-if="getShareStatusTip(participateShareRecord.participateStatus)" class="share-status-tip">
+						<text class="status-tip-text">{{ getShareStatusTip(participateShareRecord.participateStatus) }}</text>
 					</view>
 				</view>
 
@@ -252,7 +260,7 @@
 								</view>
 								<view class="bound-info">
 									<text class="bound-title">已绑定邀请人</text>
-									<text class="bound-id">邀请人ID: {{ inviterId }}</text>
+									<text class="bound-id">邀请码: {{ inviterInfo?.inviteCode || '未知' }}</text>
 								</view>
 							</view>
 							<view class="bound-divider"></view>
@@ -299,7 +307,7 @@
 	import { onLoad } from '@dcloudio/uni-app';
 	import { getCurrentUser, getUserId, setUserType } from '@/utils/auth.js';
 	import { uploadFile } from '@/utils/upload.js';
-	import { updateUser, maintainInviter, getUpdateTimes } from '@/api/userApi.js';
+	import { updateUser, maintainInviter, getUpdateTimes, queryInviter } from '@/api/userApi.js';
 	import { queryCurrentActivity, participateActivity, queryParticipateRecord } from '@/api/activityApi.js';
 
 	// 用户类型 0-普通用户 1-会员 2-非会员
@@ -316,9 +324,11 @@
 	// 用户ID
 	const userId = ref('');
 	// 邀请码相关
-	const inviteCode = ref('');
-	const inviterId = ref('');
-	const hasInviter = ref(false);
+const inviteCode = ref('');
+const inviterId = ref('');
+const hasInviter = ref(false);
+// 邀请人信息（从queryInviter接口获取）
+const inviterInfo = ref(null);
 
 	// 修改次数相关
 	const updateTimes = ref(0);
@@ -383,6 +393,22 @@
 		}
 	};
 	
+	// 查询邀请人信息
+	const fetchInviterInfo = async () => {
+		try {
+			const response = await queryInviter({});
+			if (response.code === 200) {
+				if (response.data) {
+					inviterInfo.value = response.data;
+				} else {
+					inviterInfo.value = null;
+				}
+			}
+		} catch (error) {
+			console.error('查询邀请人信息失败:', error);
+		}
+	};
+
 	// 页面加载时获取用户信息
 	onMounted(async () => {
 		await fetchCurrentUser();
@@ -390,6 +416,8 @@
 		await fetchUpdateTimes();
 		// 获取分享解锁会员活动
 		await fetchShareActivity();
+		// 获取邀请人信息
+		await fetchInviterInfo();
 	});
 
 	// 页面加载时处理参数
@@ -746,9 +774,22 @@
 	const getShareStatusText = (status) => {
 		const statusMap = {
 			1: '进行中',
-			2: '已完成'
+			2: '已完成',
+			3: '已结算',
+			4: '已作废'
 		};
 		return statusMap[status] || '未知';
+	};
+
+	// 获取分享活动状态提示
+	const getShareStatusTip = (status) => {
+		const tipMap = {
+			1: '',
+			2: '活动已完成，将在24小时内结算',
+			3: '',
+			4: '活动已作废，如有疑问请联系客服处理'
+		};
+		return tipMap[status] || '';
 	};
 
 	// 获取奖励单位文本
@@ -1510,9 +1551,32 @@
 		background: rgba(82, 196, 26, 0.8);
 	}
 
+	.share-status-badge.settled {
+		background: rgba(24, 144, 255, 0.8);
+	}
+
+	.share-status-badge.invalid {
+		background: rgba(255, 77, 79, 0.8);
+	}
+
 	.share-complete-time {
 		font-size: 20rpx;
 		color: rgba(255, 255, 255, 0.7);
+	}
+
+	/* 状态提示 */
+	.share-status-tip {
+		margin-top: 16rpx;
+		padding: 16rpx;
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 12rpx;
+		backdrop-filter: blur(10rpx);
+	}
+
+	.status-tip-text {
+		font-size: 24rpx;
+		color: #ffd700;
+		font-weight: 500;
 	}
 
 	.share-progress-ratio {
