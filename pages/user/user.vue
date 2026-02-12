@@ -981,93 +981,95 @@ const inviterInfo = ref(null);
 </script>
 
 <style lang="scss" scoped>
+	@import '@/styles/theme.scss';
+
+	/* 统一配色方案 */
+	$card-bg: #FFFFFF;
+	$card-border: #F0F0F0;
+	$primary-blue: #4A90E2;
+	$primary-blue-light: #6BA3E7;
+	$vip-gold: #E6A23C;
+	$vip-gold-light: #F0C674;
+	$text-main: #333333;
+	$text-sub: #666666;
+	$text-light: #999999;
+	$bg-page: #F8F9FA;
+	$shadow-card: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+	$shadow-primary: 0 8rpx 24rpx rgba(74, 144, 226, 0.2);
+	$shadow-vip: 0 8rpx 24rpx rgba(230, 162, 60, 0.2);
+
 	.user-container {
-		padding: 20rpx;
-		background-color: #f5f7fa;
+		padding: 24rpx;
+		background-color: $bg-page;
 		min-height: 100vh;
 	}
-	
-	
-	
-	/* 用户信息卡片 */
+
+	/* 用户信息卡片 - 简洁白色卡片 */
 	.user-card {
-		background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+		background: $card-bg;
 		border-radius: 24rpx;
-		padding: 36rpx;
+		padding: 32rpx;
 		display: flex;
 		align-items: center;
 		justify-content: flex-start;
-		margin-bottom: 32rpx;
-		box-shadow: 0 4rpx 16rpx rgba(24, 144, 255, 0.2);
+		margin-bottom: 24rpx;
+		box-shadow: $shadow-card;
 	}
-	
-	
-	
+
 	.user-info {
 		text-align: left;
-		color: #2c3e50;
+		color: $text-main;
 	}
-	
+
 	.user-header {
-				display: flex;
-				align-items: center;
-				gap: 16rpx;
-			}
+		display: flex;
+		align-items: center;
+		gap: 20rpx;
+	}
 
-			/* 头像容器 */
-			.avatar-container {
-				position: relative;
-				cursor: pointer;
-			}
+	/* 头像容器 */
+	.avatar-container {
+		position: relative;
+		cursor: pointer;
+	}
 
-			/* 用户头像 */
-			.user-avatar {
-				width: 80rpx;
-				height: 80rpx;
-				border-radius: 50%;
-				object-fit: cover;
-				border: 3rpx solid #fff;
-				box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
-				transition: all 0.3s ease;
-			}
+	/* 用户头像 */
+	.user-avatar {
+		width: 96rpx;
+		height: 96rpx;
+		border-radius: 50%;
+		object-fit: cover;
+		border: 4rpx solid #F0F7FF;
+		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+		transition: all 0.3s ease;
+	}
 
-			.avatar-container:active .user-avatar {
-				transform: scale(0.95);
-			}
+	.avatar-container:active .user-avatar {
+		transform: scale(0.95);
+	}
 
-			/* 会员标识 */
-			.member-badge {
-				position: absolute;
-				top: -8rpx;
-				right: -8rpx;
-				width: 36rpx;
-				height: 36rpx;
-				object-fit: contain;
-				z-index: 1;
-			}
+	/* 会员标识 */
+	.member-badge {
+		position: absolute;
+		top: -6rpx;
+		right: -6rpx;
+		width: 40rpx;
+		height: 40rpx;
+		object-fit: contain;
+		z-index: 1;
+	}
 
-			.user-name {
-			font-size: 36rpx;
-			font-weight: 600;
-			color: #2c3e50;
-		}
+	.user-name {
+		font-size: 36rpx;
+		font-weight: 600;
+		color: $text-main;
+	}
 
-		/* VIP用户名 - 绚丽渐变色 */
-		.vip-name {
-			background: linear-gradient(90deg, #f7971e 0%, #ffd200 25%, #f7971e 50%, #ffd200 75%, #f7971e 100%);
-			background-size: 200% auto;
-			-webkit-background-clip: text;
-			background-clip: text;
-			-webkit-text-fill-color: transparent;
-			animation: shimmer 3s linear infinite;
-			text-shadow: 0 0 20rpx rgba(247, 151, 30, 0.3);
-		}
-
-		@keyframes shimmer {
-			to {
-				background-position: 200% center;
-			}
-		}
+	/* VIP用户名 - 金色 */
+	.vip-name {
+		color: $vip-gold;
+		font-weight: 700;
+	}
 
 	/* 用户名容器样式 */
 	.user-name-container {
@@ -1080,17 +1082,17 @@ const inviterInfo = ref(null);
 	}
 
 	.user-name-container:active {
-		background-color: rgba(0, 0, 0, 0.05);
+		background-color: rgba(0, 0, 0, 0.03);
 	}
 
 	.edit-icon {
 		margin-left: 4rpx;
-		opacity: 0.7;
+		opacity: 0.5;
 		transition: opacity 0.3s ease;
 	}
 
 	.user-name-container:hover .edit-icon {
-		opacity: 1;
+		opacity: 0.8;
 	}
 
 	/* 编辑功能样式 */
@@ -1103,59 +1105,59 @@ const inviterInfo = ref(null);
 
 	.edit-input {
 		flex: 1;
-		padding: 12rpx 16rpx;
-		border: 2rpx solid #1890ff;
-		border-radius: 8rpx;
+		padding: 12rpx 20rpx;
+		border: 2rpx solid $primary-blue;
+		border-radius: 12rpx;
 		font-size: 32rpx;
 		font-weight: 600;
+		background: #FAFBFC;
 	}
 
 	/* 修改次数提示样式 */
 	.update-times-hint {
-		margin-top: 12rpx;
-		padding: 8rpx 16rpx;
-		background-color: rgba(24, 144, 255, 0.1);
-		border-radius: 8rpx;
+		margin-top: 16rpx;
+		padding: 10rpx 20rpx;
+		background-color: rgba(74, 144, 226, 0.08);
+		border-radius: 12rpx;
+		display: inline-block;
 	}
 
 	.update-times-text {
 		font-size: 22rpx;
-		color: #1890ff;
+		color: $primary-blue;
 	}
 
 	/* 保存按钮样式 */
 	.save-btn {
-		padding: 8rpx 16rpx;
-		background-color: #1890ff;
+		padding: 12rpx 24rpx;
+		background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-light 100%);
 		color: #fff;
 		border: none;
-		border-radius: 6rpx;
+		border-radius: 12rpx;
 		font-size: 24rpx;
 		font-weight: 600;
 		transition: all 0.3s ease;
-	}
-
-	.save-btn:hover {
-		background-color: #40a9ff;
+		box-shadow: 0 4rpx 12rpx rgba(74, 144, 226, 0.25);
 	}
 
 	.save-btn:active {
-		background-color: #096dd9;
+		transform: scale(0.95);
+		box-shadow: 0 2rpx 8rpx rgba(74, 144, 226, 0.15);
 	}
-	
+
 	/* VIP会员卡片 */
 	.vip-section {
-		margin-bottom: 32rpx;
+		margin-bottom: 24rpx;
 	}
 
 	.vip-card {
-		background: linear-gradient(135deg, #8aa4f0 0%, #a78bc8 100%);
+		background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-light 100%);
 		border-radius: 20rpx;
 		padding: 32rpx;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		box-shadow: 0 8rpx 32rpx rgba(138, 164, 240, 0.25);
+		box-shadow: $shadow-primary;
 		transition: all 0.3s ease;
 	}
 
@@ -1164,8 +1166,8 @@ const inviterInfo = ref(null);
 	}
 
 	.vip-card.active {
-		background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
-		box-shadow: 0 8rpx 32rpx rgba(255, 215, 0, 0.3);
+		background: linear-gradient(135deg, $vip-gold 0%, $vip-gold-light 100%);
+		box-shadow: $shadow-vip;
 	}
 
 	.vip-header {
@@ -1235,99 +1237,100 @@ const inviterInfo = ref(null);
 		font-weight: 600;
 	}
 
-	/* 功能列表 */
+	/* 功能列表 - 统一配色 */
 	.function-list {
-		background-color: #fff;
-		border-radius: 16rpx;
+		background-color: $card-bg;
+		border-radius: 20rpx;
 		overflow: hidden;
-		margin-bottom: 32rpx;
-		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
+		margin-bottom: 24rpx;
+		box-shadow: $shadow-card;
 	}
-	
+
 	.function-item {
 		display: flex;
 		align-items: center;
-		padding: 32rpx 24rpx;
-		border-bottom: 2rpx solid #f1f3f5;
+		padding: 28rpx 24rpx;
+		border-bottom: 2rpx solid #F5F5F5;
 		transition: all 0.3s ease;
 		cursor: pointer;
 	}
-	
-	.function-item:hover {
-		background-color: #f8f9fa;
+
+	.function-item:active {
+		background-color: #FAFBFC;
 	}
-	
+
 	.function-item:last-child {
 		border-bottom: none;
 	}
-	
+
 	.function-icon {
-		width: 80rpx;
-		height: 80rpx;
+		width: 72rpx;
+		height: 72rpx;
 		border-radius: 16rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		margin-right: 24rpx;
+		margin-right: 20rpx;
 	}
-	
+
+	/* 统一的功能图标配色 - 使用蓝色系 */
 	.answer-icon {
-		background: linear-gradient(135deg, #faad14 0%, #ffd666 100%);
+		background: linear-gradient(135deg, #4A90E2 0%, #6BA3E7 100%);
 	}
-	
+
 	.bank-icon {
-		background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+		background: linear-gradient(135deg, #5B8FF9 0%, #7CA6FA 100%);
 	}
-	
+
 	.service-icon {
-		background: linear-gradient(135deg, #13c2c2 0%, #36cfc9 100%);
+		background: linear-gradient(135deg, #5AD8A6 0%, #7BE1B8 100%);
 	}
 
 	.invite-icon {
-		background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+		background: linear-gradient(135deg, #F6BD16 0%, #F8D04E 100%);
 	}
 
 	/* 会员权益图标 */
 	.vip-benefits-icon {
-		background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+		background: linear-gradient(135deg, #E6A23C 0%, #F0C674 100%);
 	}
 
 	/* 权益记录图标 */
 	.vip-record-icon {
-		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+		background: linear-gradient(135deg, #4A90E2 0%, #6BA3E7 100%);
 	}
 
 	/* 兑换码图标 */
 	.redeem-icon {
-		background: linear-gradient(135deg, #722ed1 0%, #b37feb 100%);
+		background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
 	}
 
 	.icon-text {
-		font-size: 40rpx;
+		font-size: 36rpx;
 	}
-	
+
 	.function-info {
 		flex: 1;
 	}
-	
+
 	.function-title {
-		font-size: 32rpx;
+		font-size: 30rpx;
 		font-weight: 600;
-		color: #2c3e50;
+		color: $text-main;
 		margin-bottom: 4rpx;
 		display: block;
 	}
-	
+
 	.function-desc {
 		font-size: 24rpx;
-		color: #666;
+		color: $text-light;
 		display: block;
 	}
-	
+
 	.function-arrow {
-		color: #909399;
+		color: #CCCCCC;
 	}
-	
+
 	.arrow-text {
 		font-size: 28rpx;
 	}
@@ -1354,16 +1357,16 @@ const inviterInfo = ref(null);
 	border: none;
 }
 
-/* 分享活动区域样式 - 紫色/粉色主题 */
+/* 分享活动区域样式 - 统一蓝色主题 */
 	.share-activity-section {
-		margin-bottom: 40rpx;
+		margin-bottom: 24rpx;
 	}
 
 	.share-activity-container {
-		background: linear-gradient(135deg, #a78bc8 0%, #e89bc0 100%);
+		background: linear-gradient(135deg, #4A90E2 0%, #6BA3E7 100%);
 		border-radius: 20rpx;
 		padding: 28rpx;
-		box-shadow: 0 8rpx 24rpx rgba(167, 139, 200, 0.2);
+		box-shadow: $shadow-primary;
 		position: relative;
 		overflow: hidden;
 	}
@@ -1376,7 +1379,7 @@ const inviterInfo = ref(null);
 		right: -20%;
 		width: 200rpx;
 		height: 200rpx;
-		background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+		background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
 		border-radius: 50%;
 	}
 
@@ -1384,8 +1387,8 @@ const inviterInfo = ref(null);
 		position: absolute;
 		top: 16rpx;
 		right: 16rpx;
-		background: rgba(255, 255, 255, 0.9);
-		color: #a78bc8;
+		background: rgba(255, 255, 255, 0.95);
+		color: $primary-blue;
 		font-size: 20rpx;
 		font-weight: 600;
 		padding: 6rpx 14rpx;
@@ -1400,18 +1403,17 @@ const inviterInfo = ref(null);
 	}
 
 	.share-activity-icon-wrap {
-		width: 88rpx;
-		height: 88rpx;
-		background: rgba(255, 255, 255, 0.2);
-		border-radius: 20rpx;
+		width: 80rpx;
+		height: 80rpx;
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 16rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		backdrop-filter: blur(10rpx);
 	}
 
 	.share-activity-emoji {
-		font-size: 44rpx;
+		font-size: 40rpx;
 	}
 
 	.share-activity-info {
@@ -1419,7 +1421,7 @@ const inviterInfo = ref(null);
 	}
 
 	.share-activity-name {
-		font-size: 30rpx;
+		font-size: 28rpx;
 		font-weight: 700;
 		color: #ffffff;
 		display: block;
@@ -1435,17 +1437,16 @@ const inviterInfo = ref(null);
 
 	.share-reward-label {
 		font-size: 22rpx;
-		color: rgba(255, 255, 255, 0.9);
+		color: rgba(255, 255, 255, 0.95);
 		background: rgba(255, 255, 255, 0.2);
 		padding: 4rpx 12rpx;
 		border-radius: 8rpx;
 	}
 
 	.share-reward-highlight {
-		font-size: 36rpx;
-		font-weight: 800;
-		color: #ffd700;
-		text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #F6BD16;
 	}
 
 	.share-activity-progress {

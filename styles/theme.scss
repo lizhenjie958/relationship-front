@@ -1,97 +1,148 @@
-// 项目主题样式变量
-// 统一的设计规范
+// 项目主题样式变量 - 现代化设计规范
+// 采用清新、简洁的设计风格
 
-// 主色调
-$primary: #1890ff;
-$primary-light: #40a9ff;
-$primary-lighter: #69c0ff;
-$primary-dark: #096dd9;
+// ============================================
+// 主色调 - 使用更柔和的蓝色
+// ============================================
+$primary: #4A90E2;
+$primary-light: #6BA3E7;
+$primary-lighter: #8CB8EC;
+$primary-dark: #3A7BC8;
+$primary-soft: rgba(74, 144, 226, 0.1);
 
-// 辅助色
-$success: #52c41a;
-$success-light: #73d13d;
-$warning: #faad14;
-$warning-light: #ffc53d;
-$error: #ff4d4f;
-$error-light: #ff7875;
+// ============================================
+// 辅助色 - 更柔和的配色
+// ============================================
+$success: #67C23A;
+$success-light: #85CE61;
+$success-soft: rgba(103, 194, 58, 0.1);
 
-// 中性色
-$gray-1: #ffffff;
-$gray-2: #fafafa;
-$gray-3: #f5f5f5;
-$gray-4: #f0f0f0;
-$gray-5: #d9d9d9;
-$gray-6: #bfbfbf;
-$gray-7: #8c8c8c;
-$gray-8: #595959;
-$gray-9: #434343;
-$gray-10: #262626;
+$warning: #E6A23C;
+$warning-light: #EBB563;
+$warning-soft: rgba(230, 162, 60, 0.1);
 
+$error: #F56C6C;
+$error-light: #F78989;
+$error-soft: rgba(245, 108, 108, 0.1);
+
+$info: #909399;
+$info-light: #A6A9AD;
+
+// ============================================
+// 中性色 - 更清爽的中性色
+// ============================================
+$gray-1: #FFFFFF;
+$gray-2: #FAFBFC;
+$gray-3: #F5F7FA;
+$gray-4: #EBEEF5;
+$gray-5: #DCDFE6;
+$gray-6: #C0C4CC;
+$gray-7: #909399;
+$gray-8: #606266;
+$gray-9: #303133;
+$gray-10: #1A1A1A;
+
+// ============================================
 // 文字颜色
-$text-primary: #262626;
-$text-secondary: #595959;
-$text-tertiary: #8c8c8c;
-$text-quaternary: #bfbfbf;
+// ============================================
+$text-primary: #303133;
+$text-secondary: #606266;
+$text-tertiary: #909399;
+$text-quaternary: #C0C4CC;
+$text-white: #FFFFFF;
 
+// ============================================
 // 背景色
-$bg-primary: #f5f7fa;
-$bg-secondary: #ffffff;
-$bg-tertiary: #fafafa;
+// ============================================
+$bg-primary: #F5F7FA;
+$bg-secondary: #FFFFFF;
+$bg-tertiary: #FAFBFC;
 
+// ============================================
 // 边框颜色
-$border-color: #f0f0f0;
-$border-color-light: #f5f5f5;
+// ============================================
+$border-color: #EBEEF5;
+$border-color-light: #F5F7FA;
+$border-color-dark: #DCDFE6;
 
-// 阴影
-$shadow-sm: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-$shadow-md: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
-$shadow-lg: 0 8rpx 32rpx rgba(0, 0, 0, 0.12);
-$shadow-primary: 0 4rpx 16rpx rgba(24, 144, 255, 0.25);
+// ============================================
+// 阴影 - 更柔和的现代阴影
+// ============================================
+$shadow-sm: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8rpx 40rpx rgba(0, 0, 0, 0.08);
+$shadow-primary: 0 4rpx 20rpx rgba(74, 144, 226, 0.2);
+$shadow-success: 0 4rpx 20rpx rgba(103, 194, 58, 0.2);
 
-// 圆角
+// ============================================
+// 圆角 - 更现代的圆角
+// ============================================
 $radius-sm: 8rpx;
 $radius-md: 12rpx;
 $radius-lg: 16rpx;
 $radius-xl: 24rpx;
 $radius-full: 9999rpx;
 
-// 间距
+// ============================================
+// 间距 - 8的倍数系统
+// ============================================
 $spacing-xs: 8rpx;
 $spacing-sm: 16rpx;
 $spacing-md: 24rpx;
 $spacing-lg: 32rpx;
 $spacing-xl: 48rpx;
+$spacing-xxl: 64rpx;
 
+// ============================================
 // 字体大小
+// ============================================
 $font-xs: 20rpx;
 $font-sm: 24rpx;
 $font-md: 28rpx;
 $font-lg: 32rpx;
 $font-xl: 36rpx;
 $font-xxl: 40rpx;
+$font-display: 48rpx;
 
+// ============================================
 // 动画
-$transition-fast: 0.2s ease;
-$transition-normal: 0.3s ease;
-$transition-slow: 0.5s ease;
+// ============================================
+$transition-fast: 0.15s ease;
+$transition-normal: 0.25s ease;
+$transition-slow: 0.4s ease;
 
-// 混合器 - 卡片样式
+// ============================================
+// 混合器 - 现代化卡片样式
+// ============================================
 @mixin card {
   background-color: $bg-secondary;
   border-radius: $radius-lg;
-  box-shadow: $shadow-md;
+  box-shadow: $shadow-sm;
   transition: all $transition-normal;
   
   &:active {
-    box-shadow: $shadow-lg;
+    box-shadow: $shadow-md;
     transform: translateY(-2rpx);
   }
 }
 
-// 混合器 - 按钮样式
+@mixin card-flat {
+  background-color: $bg-secondary;
+  border-radius: $radius-lg;
+  border: 2rpx solid $border-color;
+  transition: all $transition-normal;
+  
+  &:active {
+    border-color: $primary-light;
+  }
+}
+
+// ============================================
+// 混合器 - 现代化按钮样式
+// ============================================
 @mixin button-primary {
   background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
-  color: $gray-1;
+  color: $text-white;
   border: none;
   border-radius: $radius-md;
   font-weight: 600;
@@ -100,11 +151,46 @@ $transition-slow: 0.5s ease;
   
   &:active {
     transform: scale(0.98);
-    box-shadow: 0 2rpx 8rpx rgba(24, 144, 255, 0.2);
+    box-shadow: 0 2rpx 12rpx rgba(74, 144, 226, 0.15);
+  }
+  
+  &[disabled] {
+    opacity: 0.6;
+    background: $gray-5;
+    box-shadow: none;
   }
 }
 
+@mixin button-success {
+  background: linear-gradient(135deg, $success 0%, $success-light 100%);
+  color: $text-white;
+  border: none;
+  border-radius: $radius-md;
+  font-weight: 600;
+  transition: all $transition-normal;
+  box-shadow: $shadow-success;
+  
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+@mixin button-ghost {
+  background: transparent;
+  color: $primary;
+  border: 2rpx solid $primary;
+  border-radius: $radius-md;
+  font-weight: 600;
+  transition: all $transition-normal;
+  
+  &:active {
+    background: $primary-soft;
+  }
+}
+
+// ============================================
 // 混合器 - 渐变文字
+// ============================================
 @mixin gradient-text($start-color, $end-color) {
   background: linear-gradient(135deg, $start-color 0%, $end-color 100%);
   -webkit-background-clip: text;
@@ -112,7 +198,9 @@ $transition-slow: 0.5s ease;
   background-clip: text;
 }
 
+// ============================================
 // 混合器 - 加载动画
+// ============================================
 @mixin loading-spinner($size: 60rpx, $color: $primary) {
   width: $size;
   height: $size;
@@ -122,7 +210,48 @@ $transition-slow: 0.5s ease;
   animation: spin 0.8s linear infinite;
 }
 
+// ============================================
+// 混合器 - 标签样式
+// ============================================
+@mixin tag($bg-color, $text-color) {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  background: $bg-color;
+  color: $text-color;
+  border-radius: $radius-full;
+  font-size: $font-sm;
+  font-weight: 500;
+}
+
+// ============================================
+// 混合器 - 输入框样式
+// ============================================
+@mixin input {
+  width: 100%;
+  height: 88rpx;
+  background: $bg-tertiary;
+  border: 2rpx solid $border-color;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  font-size: $font-md;
+  color: $text-primary;
+  transition: all $transition-normal;
+  
+  &:focus {
+    border-color: $primary;
+    background: $bg-secondary;
+    box-shadow: 0 0 0 4rpx $primary-soft;
+  }
+  
+  &::placeholder {
+    color: $text-quaternary;
+  }
+}
+
+// ============================================
 // 关键帧动画
+// ============================================
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -164,5 +293,16 @@ $transition-slow: 0.5s ease;
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

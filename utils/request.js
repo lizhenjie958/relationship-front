@@ -1,6 +1,25 @@
-import { sign } from "./signUtil.js";
+import { sign, generateTraceId } from "./signUtil.js";
 import { getToken, clearToken, loginByWechat, needReLogin } from "./auth.js";
 import { getBaseUrl } from "@/config/env.js";
+
+// 登录锁，防止loginByWechat被多次调用
+let loginPromise = null;
+
+// 带锁的登录函数
+const loginWithLock = async () => {
+    if (loginPromise) {
+        // 如果正在登录中，等待登录完成
+        return loginPromise;
+    }
+    
+    // 创建新的登录Promise
+    loginPromise = loginByWechat().finally(() => {
+        // 登录完成后清除锁
+        loginPromise = null;
+    });
+    
+    return loginPromise;
+};
 
 /**
  * 格式化日期时间，去掉秒
@@ -30,7 +49,7 @@ export async function request(config = {}) {
     // 检查是否需要登录
     if (!getToken()) {
         try {
-            await loginByWechat();
+            await loginWithLock();
         } catch (error) {
             console.error('自动登录失败:', error);
             return Promise.reject(error);
@@ -38,19 +57,20 @@ export async function request(config = {}) {
     }
     
     const timestamp = new Date().getTime();
+    const traceid = generateTraceId();
     const {
         url,
         method = "POST",
         data = {}
     } = config;
-    
+
     try {
-        // 生成签名
-        const signature = sign(timestamp);
-        
+        // 生成签名（包含traceid）
+        const signature = sign(timestamp, traceid);
+
         // 获取当前环境的baseUrl
         const baseUrl = getBaseUrl();
-        
+
         return new Promise((resolve, reject) => {
             uni.request({
                 url: baseUrl + url,
@@ -59,9 +79,22 @@ export async function request(config = {}) {
                 header: {
                     "token": getToken() || "",
                     "sign": signature,
-                    "timestamp": timestamp
+                    "timestamp": timestamp,
+                    "traceid": traceid
                 },
                 success: async res => {
+                    // 检查HTTP状态码
+                    if (res.statusCode < 200 || res.statusCode >= 300) {
+                        console.error('HTTP错误:', res.statusCode, res.data);
+                        uni.showToast({
+                            title: `服务器错误(${res.statusCode})`,
+                            icon: 'none',
+                            duration: 2000
+                        });
+                        reject(new Error(`HTTP ${res.statusCode}`));
+                        return;
+                    }
+                    
                     const responseData = res.data;
                     
                     // 检查是否需要重新登录
@@ -70,8 +103,8 @@ export async function request(config = {}) {
                         clearToken();
                         
                         try {
-                            // 重新登录
-                            await loginByWechat();
+                            // 重新登录（使用锁防止多次调用）
+                            await loginWithLock();
                             // 重新发起请求
                             const retryResponse = await request(config);
                             resolve(retryResponse);
@@ -85,6 +118,12 @@ export async function request(config = {}) {
                 },
                 fail: err => {
                     console.error('请求失败:', err);
+                    // 显示错误提示
+                    uni.showToast({
+                        title: '网络请求失败，请检查网络',
+                        icon: 'none',
+                        duration: 2000
+                    });
                     reject(err);
                 }
             });

@@ -2,7 +2,7 @@
 // 环境配置中心
 
 // 默认环境
-const DEFAULT_ENV = 'dev';
+const DEFAULT_ENV = 'prod';
 
 // 统一配置不同环境的请求地址
 const ENV_CONFIG = {
@@ -13,7 +13,7 @@ const ENV_CONFIG = {
     },
     // 本地/开发环境
     dev: {
-        baseUrl: 'http://60bj4820ma68.vicp.fun',
+        baseUrl: 'http://db857b3.r32.cpolar.top',
         name: '本地环境'
     }
 };

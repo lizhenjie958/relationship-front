@@ -709,71 +709,69 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	});
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+	@import '@/styles/theme.scss';
+
+	/* 统一配色方案 */
+	$card-bg: #FFFFFF;
+	$card-border: #F0F0F0;
+	$primary-blue: #4A90E2;
+	$primary-blue-light: #6BA3E7;
+	$text-main: #333333;
+	$text-sub: #666666;
+	$text-light: #999999;
+	$bg-page: #F8F9FA;
+	$shadow-card: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+	$shadow-primary: 0 8rpx 24rpx rgba(74, 144, 226, 0.2);
+
 	.container {
-		padding: 20rpx;
-		background-color: #f5f7fa;
+		padding: 24rpx;
+		background-color: $bg-page;
 		min-height: 100vh;
 	}
 
-	/* 今日答题统计容器 */
+	/* 今日答题统计容器 - 统一白色卡片 */
 	.today-stats-container {
-		background-color: #ffffff;
-		border-radius: 16rpx;
-		padding: 24rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		background-color: $card-bg;
+		border-radius: 20rpx;
+		padding: 28rpx;
+		margin-bottom: 24rpx;
+		box-shadow: $shadow-card;
 		position: relative;
 		overflow: hidden;
 	}
 
-	/* 装饰元素 */
+	/* 装饰元素 - 统一蓝色 */
 	.today-stats-container::before {
 		content: '';
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 6rpx;
-		background: linear-gradient(90deg, #1890ff, #69c0ff);
-		border-radius: 16rpx 16rpx 0 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, $primary-blue, $primary-blue-light);
+		border-radius: 20rpx 20rpx 0 0;
 	}
 
 	/* 今日答题统计标题 */
 	.today-stats-header {
 		margin-bottom: 24rpx;
-		padding-bottom: 16rpx;
-		border-bottom: 2rpx solid #f0f0f0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 	}
 
 	.today-stats-title {
-		font-size: 28rpx;
-		font-weight: bold;
-		color: #333333;
+		font-size: 30rpx;
+		font-weight: 600;
+		color: $text-main;
 		display: block;
-		position: relative;
-		padding-left: 16rpx;
-	}
-
-	.today-stats-title::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 50%;
-		transform: translateY(-50%);
-		width: 6rpx;
-		height: 24rpx;
-		background-color: #1890ff;
-		border-radius: 3rpx;
 	}
 
 	/* 日期显示 */
 	.today-date {
-		font-size: 20rpx;
-		color: #999999;
+		font-size: 22rpx;
+		color: $text-light;
 	}
 
 	/* 顶部统计卡片 */
@@ -786,47 +784,46 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 
 	.stat-card {
 		flex: 1;
-		border-radius: 12rpx;
-		padding: 20rpx;
-		margin: 0 10rpx;
+		border-radius: 16rpx;
+		padding: 24rpx 16rpx;
 		text-align: center;
-		background-color: #fafafa;
-		border: 2rpx solid #f0f0f0;
+		background-color: #FAFBFC;
+		border: 2rpx solid #F0F0F0;
+		transition: all 0.3s ease;
 	}
 
-	.stat-card:hover {
-		background-color: #f0f7ff;
-		border-color: #d6e4ff;
-		transition: all 0.3s ease;
+	.stat-card:active {
+		background-color: #F0F7FF;
+		border-color: #D6E4FF;
 	}
 
 	.stat-label {
 		display: block;
 		font-size: 24rpx;
-		color: #666666;
-		margin-bottom: 8rpx;
+		color: $text-light;
+		margin-bottom: 12rpx;
 	}
 
 	.stat-value {
 		display: block;
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333333;
+		font-size: 36rpx;
+		font-weight: 700;
+		color: $text-main;
 	}
 
 	/* 热门试卷可点击样式 */
 	.hot-exam {
-		color: #1890ff;
+		color: $primary-blue;
 		cursor: pointer;
 	}
 
-	/* 页面头部样式 */
+	/* 页面头部样式 - 统一蓝色 */
 	.page-header {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-light 100%);
 		border-radius: 20rpx;
 		padding: 32rpx;
 		margin-bottom: 24rpx;
-		box-shadow: 0 8rpx 32rpx rgba(102, 126, 234, 0.3);
+		box-shadow: $shadow-primary;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -916,80 +913,80 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	}
 
 	.title-icon {
-		width: 48rpx;
-		height: 48rpx;
-		border-radius: 12rpx;
+		width: 44rpx;
+		height: 44rpx;
+		border-radius: 10rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 28rpx;
+		font-size: 26rpx;
 	}
 
 	.title-icon.blue {
-		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+		background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-light 100%);
 	}
 
 	.title-icon.purple {
-	background: linear-gradient(135deg, #722ed1 0%, #eb2f96 100%);
-}
+		background: linear-gradient(135deg, #5B8FF9 0%, #7CA6FA 100%);
+	}
 
-.title-icon.orange {
-	background: linear-gradient(135deg, #fa8c16 0%, #ffc53d 100%);
-}
+	.title-icon.orange {
+		background: linear-gradient(135deg, #E6A23C 0%, #F0C674 100%);
+	}
 
-	/* 出题者视角统计容器 */
+	/* 出题者视角统计容器 - 统一白色卡片 */
 	.creator-stats-container {
-		background-color: #ffffff;
-		border-radius: 16rpx;
-		padding: 24rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		background-color: $card-bg;
+		border-radius: 20rpx;
+		padding: 28rpx;
+		margin-bottom: 24rpx;
+		box-shadow: $shadow-card;
 		position: relative;
 		overflow: hidden;
 	}
 
-	/* 装饰元素 - 出题者视角使用不同的颜色 */
+	/* 装饰元素 - 统一蓝色 */
 	.creator-stats-container::before {
 		content: '';
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 6rpx;
-		background: linear-gradient(90deg, #722ed1, #eb2f96);
-		border-radius: 16rpx 16rpx 0 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, $primary-blue, $primary-blue-light);
+		border-radius: 20rpx 20rpx 0 0;
 	}
 
-	/* 连续答题挑战容器 */
+	/* 连续答题挑战容器 - 统一白色卡片 */
 	.challenge-container {
-		background-color: #ffffff;
-		border-radius: 16rpx;
-		padding: 24rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+		background-color: $card-bg;
+		border-radius: 20rpx;
+		padding: 28rpx;
+		margin-bottom: 24rpx;
+		box-shadow: $shadow-card;
 		position: relative;
 		overflow: hidden;
 	}
 
-	/* 装饰元素 */
+	/* 装饰元素 - 统一蓝色 */
 	.challenge-container::before {
 		content: '';
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 6rpx;
-		background: linear-gradient(90deg, #52c41a, #95de64);
-		border-radius: 16rpx 16rpx 0 0;
+		height: 4rpx;
+		background: linear-gradient(90deg, $primary-blue, $primary-blue-light);
+		border-radius: 20rpx 20rpx 0 0;
 	}
 
-	/* 活动容器 */
+	/* 活动容器 - 统一蓝色 */
 	.activity-container {
-		background: linear-gradient(135deg, #1890ff 0%, #69c0ff 100%);
+		background: linear-gradient(135deg, $primary-blue 0%, $primary-blue-light 100%);
 		border-radius: 20rpx;
 		padding: 28rpx;
 		margin-bottom: 24rpx;
-		box-shadow: 0 8rpx 24rpx rgba(24, 144, 255, 0.25);
+		box-shadow: $shadow-primary;
 		position: relative;
 		overflow: hidden;
 	}
@@ -1010,8 +1007,8 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 		position: absolute;
 		top: 16rpx;
 		right: 16rpx;
-		background: rgba(255, 255, 255, 0.9);
-		color: #1890ff;
+		background: rgba(255, 255, 255, 0.95);
+		color: $primary-blue;
 		font-size: 20rpx;
 		font-weight: 600;
 		padding: 6rpx 14rpx;
@@ -1026,18 +1023,17 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	}
 
 	.activity-icon-wrap {
-		width: 88rpx;
-		height: 88rpx;
-		background: rgba(255, 255, 255, 0.2);
-		border-radius: 20rpx;
+		width: 80rpx;
+		height: 80rpx;
+		background: rgba(255, 255, 255, 0.15);
+		border-radius: 16rpx;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		backdrop-filter: blur(10rpx);
 	}
 
 	.activity-emoji {
-		font-size: 44rpx;
+		font-size: 40rpx;
 	}
 
 	.activity-info {
@@ -1045,7 +1041,7 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	}
 
 	.activity-name {
-		font-size: 30rpx;
+		font-size: 28rpx;
 		font-weight: 700;
 		color: #ffffff;
 		display: block;
@@ -1061,17 +1057,16 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 
 	.reward-label {
 		font-size: 22rpx;
-		color: rgba(255, 255, 255, 0.9);
+		color: rgba(255, 255, 255, 0.95);
 		background: rgba(255, 255, 255, 0.2);
 		padding: 4rpx 12rpx;
 		border-radius: 8rpx;
 	}
 
 	.reward-highlight {
-		font-size: 36rpx;
-		font-weight: 800;
-		color: #fff566;
-		text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.2);
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #F6BD16;
 	}
 
 	.activity-progress {
@@ -1195,19 +1190,19 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	.participate-btn {
 		width: 100%;
 		height: 80rpx;
-		background: linear-gradient(135deg, #fff566 0%, #ffd700 100%);
+		background: #FFFFFF;
 		border-radius: 40rpx;
 		border: none;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 4rpx 16rpx rgba(255, 245, 102, 0.4);
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 		transition: all 0.3s ease;
 	}
 
 	.participate-btn:active:not(.loading) {
 		transform: scale(0.98);
-		box-shadow: 0 2rpx 8rpx rgba(255, 245, 102, 0.3);
+		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
 	}
 
 	.participate-btn.loading {
@@ -1217,13 +1212,13 @@ import { queryCurrentActivity, participateActivity, queryParticipateRecord } fro
 	.participate-btn .btn-text {
 		font-size: 30rpx;
 		font-weight: 700;
-		color: #333;
+		color: $primary-blue;
 	}
 
 	.participate-btn .btn-loading-text {
 		font-size: 30rpx;
 		font-weight: 600;
-		color: #666;
+		color: $text-light;
 	}
 
 	.participated-status {

@@ -2,11 +2,20 @@
 import { getBaseUrl } from "@/config/env.js";
 
 let signFunc = null;
+let generateTraceIdFunc = null;
+
 const getSign = () => {
     if (!signFunc) {
         signFunc = require("./signUtil.js").sign;
     }
     return signFunc;
+};
+
+const getGenerateTraceId = () => {
+    if (!generateTraceIdFunc) {
+        generateTraceIdFunc = require("./signUtil.js").generateTraceId;
+    }
+    return generateTraceIdFunc;
 };
 
 // 存储键名
@@ -86,7 +95,8 @@ export async function loginByWechat(inviteCode = null) {
     }
 
     const timestamp = new Date().getTime();
-    const signature = getSign()(timestamp);
+    const traceid = getGenerateTraceId()();
+    const signature = getSign()(timestamp, traceid);
 
     // 2. 调用后端登录接口
     const response = await new Promise((resolve, reject) => {
@@ -96,7 +106,8 @@ export async function loginByWechat(inviteCode = null) {
         data,
         header: {
           "sign": signature,
-          "timestamp": timestamp
+          "timestamp": timestamp,
+          "traceid": traceid
         },
         success: res => {
           resolve(res.data);
@@ -145,7 +156,8 @@ export async function getCurrentUser() {
 
     const data = {};
     const timestamp = new Date().getTime();
-    const signature = getSign()(timestamp);
+    const traceid = getGenerateTraceId()();
+    const signature = getSign()(timestamp, traceid);
 
     const response = await new Promise((resolve, reject) => {
       uni.request({
@@ -155,7 +167,8 @@ export async function getCurrentUser() {
         header: {
           "token": token,
           "sign": signature,
-          "timestamp": timestamp
+          "timestamp": timestamp,
+          "traceid": traceid
         },
         success: res => {
           resolve(res.data);
