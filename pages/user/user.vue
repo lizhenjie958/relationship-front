@@ -5,12 +5,10 @@
 		<view class="user-card">
 			<view class="user-info">
 				<view class="user-header">
-					<!-- 头像和会员标识 -->
-					<view class="avatar-container" @click="chooseAvatar">
-						<image :src="avatarUrl" class="user-avatar" />
-						<image v-if="userType === 2" :src="'/static/images/member.png'" class="member-badge" />
-						<image v-else :src="'/static/images/member-n.png'" class="member-badge" />
-					</view>
+					<!-- 头像 -->
+				<view class="avatar-container" @click="chooseAvatar">
+					<image :src="avatarUrl" class="user-avatar" />
+				</view>
 					<template v-if="!isEditing">
 				<view class="user-name-container" @click="startEditing">
 					<text class="user-name" :class="{ 'vip-name': userType === 2 }">{{ userName }}</text>
@@ -31,7 +29,7 @@
 				</template>
 				<!-- 修改次数提示 -->
 				<view class="update-times-hint">
-					<text class="update-times-text">今日已修改 {{ updateTimes }} 次，剩余 {{ remainingTimes }} 次</text>
+					<text class="update-times-text">今日修改 {{ updateTimes }} 次，剩余 {{ remainingTimes }} 次</text>
 				</view>
 				</view>
 			</view>
@@ -1046,17 +1044,6 @@ const inviterInfo = ref(null);
 
 	.avatar-container:active .user-avatar {
 		transform: scale(0.95);
-	}
-
-	/* 会员标识 */
-	.member-badge {
-		position: absolute;
-		top: -6rpx;
-		right: -6rpx;
-		width: 40rpx;
-		height: 40rpx;
-		object-fit: contain;
-		z-index: 1;
 	}
 
 	.user-name {
