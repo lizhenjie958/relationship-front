@@ -6,31 +6,39 @@
 			<view class="user-info">
 				<view class="user-header">
 					<!-- 头像 -->
-				<view class="avatar-container" @click="chooseAvatar">
-					<image :src="avatarUrl" class="user-avatar" />
-				</view>
-					<template v-if="!isEditing">
-				<view class="user-name-container" @click="startEditing">
-					<text class="user-name" :class="{ 'vip-name': userType === 2 }">{{ userName }}</text>
-					<uni-icons type="compose" size="24rpx" color="#999" class="edit-icon" />
-				</view>
-			</template>
-				<template v-else>
-					<view class="edit-container">
-						<input 
-							v-model="editedName" 
-							class="edit-input" 
-							@keyup.enter="saveUserName"
-							@keyup.esc="cancelEditing"
-							autofocus
-						/>
-						<button class="save-btn" @click="saveUserName">确认</button>
+					<view class="avatar-container" @click="chooseAvatar">
+						<image :src="avatarUrl" class="user-avatar" />
 					</view>
-				</template>
-				<!-- 修改次数提示 -->
-				<view class="update-times-hint">
-					<text class="update-times-text">今日修改 {{ updateTimes }} 次，剩余 {{ remainingTimes }} 次</text>
-				</view>
+					
+					<!-- 用户名和修改次数容器 -->
+					<view class="user-meta">
+						<!-- 用户名区域 -->
+						<view class="user-name-wrapper">
+							<template v-if="!isEditing">
+								<view class="user-name-container" @click="startEditing">
+									<text class="user-name" :class="{ 'vip-name': userType === 2 }">{{ userName }}</text>
+									<uni-icons type="compose" size="24rpx" color="#999" class="edit-icon" />
+								</view>
+							</template>
+							<template v-else>
+								<view class="edit-container">
+									<input 
+										v-model="editedName" 
+										class="edit-input" 
+										@keyup.enter="saveUserName"
+										@keyup.esc="cancelEditing"
+										autofocus
+									/>
+									<button class="save-btn" @click="saveUserName">确认</button>
+								</view>
+							</template>
+						</view>
+						
+						<!-- 修改次数提示 -->
+						<view class="update-times-hint">
+							<text class="update-times-text">今日修改 {{ updateTimes }} 次，剩余 {{ remainingTimes }} 次</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
