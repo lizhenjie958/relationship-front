@@ -8,7 +8,7 @@ const DEFAULT_ENV = 'prod';
 const ENV_CONFIG = {
     // 生产环境
     prod: {
-        baseUrl: 'http://relationship.muchunfeng.top',
+        baseUrl: 'https://relationship.muchunfeng.top',
         name: '生产环境'
     },
     // 本地/开发环境
