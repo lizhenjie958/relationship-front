@@ -27,6 +27,8 @@
 										class="edit-input" 
 										@keyup.enter="saveUserName"
 										@keyup.esc="cancelEditing"
+										@input="handleNameInput"
+										maxlength="10"
 										autofocus
 									/>
 									<button class="save-btn" @click="saveUserName">确认</button>
@@ -845,6 +847,12 @@ const inviterInfo = ref(null);
 	const startEditing = () => {
 		isEditing.value = true;
 		editedName.value = userName.value;
+	};
+
+	// 处理用户名输入 - 禁止空格
+	const handleNameInput = (e) => {
+		// 移除所有空格
+		editedName.value = e.detail.value.replace(/\s/g, '');
 	};
 	
 	// 保存用户名

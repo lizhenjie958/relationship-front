@@ -50,6 +50,14 @@
 					<view class="empty-icon">📭</view>
 					<text class="empty-text">暂无数据</text>
 					<text class="empty-hint" v-if="activeTab === 'personal'">点击"新增关系"按钮添加第一个关系</text>
+					<!-- 个人关系为空时，提示可以去公共关系复制 -->
+					<view v-if="activeTab === 'personal'" class="copy-hint-box" @click="switchTab('common')">
+						<text class="copy-hint-icon">💡</text>
+						<view class="copy-hint-content">
+							<text class="copy-hint-title">没有合适的关系？</text>
+							<text class="copy-hint-desc">去公共关系库复制一个吧 →</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -817,6 +825,45 @@ onShow(() => {
 	font-size: 26rpx;
 	color: #c0c4cc;
 	font-weight: 400;
+}
+
+/* 复制提示框样式 */
+.copy-hint-box {
+	display: flex;
+	align-items: center;
+	gap: 20rpx;
+	margin-top: 40rpx;
+	padding: 28rpx 32rpx;
+	background: linear-gradient(135deg, #fff7e6 0%, #fff1d6 100%);
+	border-radius: 16rpx;
+	border: 2rpx solid #ffd591;
+	transition: all 0.3s ease;
+}
+
+.copy-hint-box:active {
+	transform: scale(0.98);
+	background: linear-gradient(135deg, #fff1d6 0%, #ffe7c2 100%);
+}
+
+.copy-hint-icon {
+	font-size: 48rpx;
+}
+
+.copy-hint-content {
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.copy-hint-title {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #d46b08;
+}
+
+.copy-hint-desc {
+	font-size: 24rpx;
+	color: #fa8c16;
 }
 
 /* 加载容器 */

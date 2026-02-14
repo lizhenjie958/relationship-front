@@ -1,13 +1,13 @@
 // 环境配置中心 - 手动切换环境
 
 // 默认环境 - 修改此值切换环境: 'prod' 或 'dev'
-const DEFAULT_ENV = 'prod';
+const DEFAULT_ENV = 'dev';
 
 // 统一配置不同环境的请求地址
 const ENV_CONFIG = {
     // 生产环境
     prod: {
-        baseUrl: 'https://relationship.muchunfeng.top',
+        baseUrl: 'https://relationship.muchunfeng.top/api',
         name: '生产环境'
     },
     // 本地/开发环境

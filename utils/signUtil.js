@@ -19,7 +19,7 @@ function generateUUID() {
  * @returns {string} MD5签名
  */
 export function sign(timestamp, traceid) {
-    const signRawWithRelation = "relationship=8905e6ee&timestamp=" + timestamp + "&traceid=" + traceid;
+    const signRawWithRelation = "relationship=y6y4a9xx&timestamp=" + timestamp + "&traceid=" + traceid;
     const md5Hash = md5(signRawWithRelation);
     return md5Hash;
 }

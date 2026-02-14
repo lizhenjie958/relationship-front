@@ -22,7 +22,7 @@
 			<view class="avatar-info">
 				<!-- 头像 -->
 				<view class="avatar-section">
-					<view class="avatar-wrapper" @click="!editDisabled && chooseUserAvatar" :class="{ 'disabled': editDisabled }">
+					<view class="avatar-wrapper" @click="!editDisabled && chooseUserAvatar()" :class="{ 'disabled': editDisabled }">
 						<image v-if="userInfo.avatar" :src="userInfo.avatar" class="user-avatar"></image>
 						<view v-else class="user-avatar-placeholder">
 							<text class="placeholder-text">点击上传</text>
@@ -45,14 +45,16 @@
 							<text class="edit-hint">✏️</text>
 						</view>
 						<input v-else
-							v-model="userInfo.name"
-							class="info-input"
-							@blur="handleNameBlur"
-							@keyup.enter="editState.name = false"
-							placeholder="请输入主角姓名"
-							auto-focus
-							:disabled="editDisabled"
-						/>
+						v-model="userInfo.name"
+						class="info-input"
+						@blur="handleNameBlur"
+						@input="handleNameInput"
+						@keyup.enter="editState.name = false"
+						placeholder="请输入主角姓名"
+						maxlength="10"
+						auto-focus
+						:disabled="editDisabled"
+					/>
 					</view>
 					<text v-if="nameError" class="field-error">主角姓名不能为空</text>
 				</view>
@@ -69,14 +71,16 @@
 							<text class="edit-hint">✏️</text>
 						</view>
 						<textarea v-else
-							v-model="userInfo.remark"
-							class="info-textarea"
-							@blur="handleRemarkBlur"
-							placeholder="请输入备注"
-							rows="3"
-							auto-focus
-							:disabled="editDisabled"
-						/>
+						v-model="userInfo.remark"
+						class="info-textarea"
+						@blur="handleRemarkBlur"
+						@input="handleRemarkInput"
+						placeholder="请输入备注"
+						maxlength="50"
+						rows="3"
+						auto-focus
+						:disabled="editDisabled"
+					/>
 					</view>
 					<text v-if="remarkError" class="field-error">备注不能为空</text>
 				</view>
@@ -95,12 +99,14 @@
 					<view class="table-cell relation-col">
 						<view class="input-wrapper">
 							<input
-								v-model="item.relation"
-								class="relation-input"
-								placeholder="请输入关系"
-								:class="{ 'error': item.error && !item.relation, 'disabled': editDisabled }"
-								:disabled="editDisabled"
-							/>
+							v-model="item.relation"
+							class="relation-input"
+							placeholder="请输入关系"
+							@input="(e) => handleRelationInput(e, index)"
+							maxlength="10"
+							:class="{ 'error': item.error && !item.relation, 'disabled': editDisabled }"
+							:disabled="editDisabled"
+						/>
 							<view v-if="item.error && !item.relation" class="error-hint">请填写关系</view>
 						</view>
 					</view>
@@ -260,16 +266,41 @@
 		}
 	};
 
+	// 处理主角姓名输入 - 自动去除空格，限制10字符
+	const handleNameInput = (e) => {
+		// 移除所有空格
+		userInfo.name = e.detail.value.replace(/\s/g, '');
+	};
+
 	// 处理主角姓名失去焦点
 	const handleNameBlur = () => {
 		editState.name = false;
-		nameError.value = !userInfo.name.trim();
+		// 自动去除前后空格并截断到10字符
+		userInfo.name = userInfo.name.trim().slice(0, 10);
+		nameError.value = !userInfo.name;
+	};
+
+	// 处理备注输入 - 禁止空格，限制50字符
+	const handleRemarkInput = (e) => {
+		// 移除所有空格
+		userInfo.remark = e.detail.value.replace(/\s/g, '');
 	};
 
 	// 处理备注失去焦点
 	const handleRemarkBlur = () => {
 		editState.remark = false;
-		remarkError.value = !userInfo.remark.trim();
+		// 自动去除前后空格并截断到50字符
+		userInfo.remark = userInfo.remark.trim().slice(0, 50);
+		remarkError.value = !userInfo.remark;
+	};
+
+	// 处理关系名称输入 - 禁止空格和标点符号，限制10字符
+	const handleRelationInput = (e, index) => {
+		// 移除空格、标点符号和特殊字符，只允许中文、英文、数字
+		let value = e.detail.value.replace(/[\s\p{P}\p{S}]/gu, '');
+		// 限制10字符
+		value = value.slice(0, 10);
+		relationList.value[index].relation = value;
 	};
 
 	// 通用上传函数
@@ -402,6 +433,13 @@
 		console.log('开始保存数据');
 		let isValid = true;
 
+		// 验证主角头像
+		if (!userInfo.avatar) {
+			isValid = false;
+			uni.showToast({ title: '请上传主角头像', icon: 'none' });
+			return;
+		}
+
 		// 验证主角姓名
 		if (!userInfo.name.trim()) {
 			nameError.value = true;
@@ -424,10 +462,15 @@
 			if (!item.relation) {
 				isValid = false;
 			}
+			// 验证关系头像
+			if (!item.avatar) {
+				item.error = true;
+				isValid = false;
+			}
 		});
 
 		if (!isValid) {
-			uni.showToast({ title: '请填写所有关系', icon: 'none' });
+			uni.showToast({ title: '请填写所有关系并上传头像', icon: 'none' });
 			return;
 		}
 		
