@@ -205,7 +205,7 @@
 		
 		<!-- 版本信息 -->
 		<view class="version-info">
-			<text class="version-text">版本 1.0.0</text>
+			<text class="version-text">版本 {{ appVersion }}</text>
 		</view>
 
 		<!-- 邀请码弹窗 -->
@@ -313,9 +313,15 @@
 	import { uploadFile } from '@/utils/upload.js';
 	import { updateUser, maintainInviter, getUpdateTimes, queryInviter } from '@/api/userApi.js';
 	import { queryCurrentActivity, participateActivity, queryParticipateRecord } from '@/api/activityApi.js';
+	
+	// 导入 manifest.json 获取版本号
+	import manifest from '@/manifest.json';
 
 	// 用户类型 0-普通用户 1-会员 2-非会员
 	const userType = ref(0);
+	
+	// 应用版本号
+	const appVersion = ref(manifest.versionName || '1.0.0');
 
 	// 用户名相关
 	const userName = ref('微信用户');
