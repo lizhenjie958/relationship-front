@@ -5,25 +5,43 @@
 		<!-- 主信息区域 -->
 		<view class="main-info">
 			<view class="info-card">
-				<view class="info-item">
-				<text class="info-label">主角：</text>
-				<text class="info-value">{{ protagonistName }}</text>
-			</view>
-			<view class="info-item">
-				<text class="info-label">出题人：</text>
-				<text class="info-value">{{ examinerName }}</text>
-			</view>
-				<view class="info-item">
-					<text class="info-label">答题时间：</text>
-					<text class="info-value">{{ answerTime }}</text>
+				<!-- 主角信息区域（带头像） -->
+				<view class="protagonist-section">
+					<view class="protagonist-avatar-wrapper">
+						<image 
+							v-if="protagonistPicUrl" 
+							:src="protagonistPicUrl" 
+							class="protagonist-avatar" 
+							mode="aspectFill"
+						/>
+						<view v-else class="protagonist-avatar-placeholder">
+							<text class="avatar-icon">👤</text>
+						</view>
+					</view>
+					<view class="protagonist-info">
+						<text class="protagonist-label">主角</text>
+						<text class="protagonist-name">{{ protagonistName }}</text>
+					</view>
 				</view>
-				<view class="info-item" v-if="answerStatus === 'completed'">
-				<text class="info-label">得分：</text>
-				<text class="info-value score">{{ score }}分</text>
-			</view>
-				<view class="info-item">
-					<text class="info-label">状态：</text>
-					<text class="info-value" :class="statusClass">{{ statusText }}</text>
+				
+				<!-- 其他信息 -->
+				<view class="info-list">
+					<view class="info-item">
+						<text class="info-label">出题人：</text>
+						<text class="info-value">{{ examinerName }}</text>
+					</view>
+					<view class="info-item">
+						<text class="info-label">答题时间：</text>
+						<text class="info-value">{{ answerTime }}</text>
+					</view>
+					<view class="info-item" v-if="answerStatus === 'completed'">
+						<text class="info-label">得分：</text>
+						<text class="info-value score">{{ score }}分</text>
+					</view>
+					<view class="info-item">
+						<text class="info-label">状态：</text>
+						<text class="info-value" :class="statusClass">{{ statusText }}</text>
+					</view>
 				</view>
 			</view>
 		</view>
@@ -87,6 +105,7 @@ import { queryMember } from '@/api/memberApi.js';
 	
 	// 答卷详情数据
 const protagonistName = ref('');
+const protagonistPicUrl = ref('');
 const examinerName = ref('');
 const answerTime = ref('');
 const score = ref(0);
@@ -466,6 +485,7 @@ const fetchAnswerRecordData = async (recordId) => {
 			
 			// 更新答卷详情数据
 			protagonistName.value = data.protagonistInfoDTO?.protagonist || '';
+			protagonistPicUrl.value = data.protagonistInfoDTO?.picUrl || '';
 			examinerName.value = data.examinerName || '-';
 			answerTime.value = formatDateTime(data.createTime);
 			score.value = data.score || 0;
@@ -562,7 +582,71 @@ const fetchExamPaperQuestions = async (paperId) => {
 	.info-card:hover {
 		box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.12);
 	}
-	
+
+	/* 主角信息区域 */
+	.protagonist-section {
+		display: flex;
+		align-items: center;
+		gap: 24rpx;
+		padding: 24rpx;
+		margin: -32rpx -32rpx 24rpx -32rpx;
+		background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ff 100%);
+		border-bottom: 2rpx solid rgba(24, 144, 255, 0.1);
+	}
+
+	.protagonist-avatar-wrapper {
+		position: relative;
+		flex-shrink: 0;
+	}
+
+	.protagonist-avatar {
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+		border: 4rpx solid #fff;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+		object-fit: cover;
+	}
+
+	.protagonist-avatar-placeholder {
+		width: 120rpx;
+		height: 120rpx;
+		border-radius: 50%;
+		border: 4rpx solid #fff;
+		box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+		background: linear-gradient(135deg, #e0e0e0 0%, #f0f0f0 100%);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.avatar-icon {
+		font-size: 56rpx;
+	}
+
+	.protagonist-info {
+		display: flex;
+		flex-direction: column;
+		gap: 8rpx;
+	}
+
+	.protagonist-label {
+		font-size: 24rpx;
+		color: #666;
+		font-weight: 500;
+	}
+
+	.protagonist-name {
+		font-size: 40rpx;
+		color: #333;
+		font-weight: 700;
+	}
+
+	/* 信息列表 */
+	.info-list {
+		padding-top: 8rpx;
+	}
+
 	.info-item {
 		display: flex;
 		align-items: center;

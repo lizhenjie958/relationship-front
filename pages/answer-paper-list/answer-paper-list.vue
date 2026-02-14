@@ -27,7 +27,7 @@
 					<view class="table-cell creator-cell">出题人</view>
 					<view class="table-cell protagonist-cell">主角</view>
 					<view class="table-cell answer-time-cell">答题时间</view>
-					<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : '过期时间' }}</view>
+					<view class="table-cell complete-time-cell">{{ activeTab === 'completed' ? '完成时间' : (activeTab === 'ongoing' ? '剩余时间' : '过期时间') }}</view>
 					<view v-if="activeTab === 'completed'" class="table-cell score-cell">得分</view>
 				</view>
 
@@ -49,8 +49,8 @@
 							<text class="answer-time">{{ item.answerTime }}</text>
 						</view>
 						<view class="table-cell complete-time-cell">
-							<text class="complete-time">{{ activeTab === 'completed' ? item.completeTime : item.expireTime }}</text>
-						</view>
+					<text class="complete-time" :class="{ 'countdown': activeTab === 'ongoing' }">{{ getTimeDisplay(item) }}</text>
+				</view>
 						<view v-if="activeTab === 'completed'" class="table-cell score-cell">
 							<text class="score">{{ item.score }}</text>
 						</view>
@@ -121,6 +121,8 @@ const fetchAnswers = async () => {
 						protagonist: item.protagonistInfoDTO?.protagonist || '',
 						answerTime: formatDateTime(item.createTime),
 						expireTime: formatDateTime(item.timeoutTime),
+						createTimeRaw: item.createTime, // 原始创建时间用于计算剩余时间
+						expireTimeRaw: item.timeoutTime, // 原始过期时间用于计算剩余时间
 						completeTime: formatDateTime(item.completeTime),
 						score: item.score || 0, // 使用接口返回的真实score值
 						examPaperId: item.examPaperId,
@@ -177,6 +179,46 @@ const goToAnswerRecord = (recordId) => {
 	uni.navigateTo({
 		url: `/pages/answer-paper-detail/answer-paper-detail?id=${recordId}`
 	});
+};
+
+// 计算剩余时间（timeoutTime - 当前时间）
+const calculateRemainingTime = (timeoutTimeStr) => {
+	if (!timeoutTimeStr) return '-';
+	
+	// 处理 ISO 格式时间 (2026-02-14T14:00:11)
+	const now = new Date();
+	const timeoutTime = new Date(timeoutTimeStr);
+	
+	// 检查日期是否有效
+	if (isNaN(timeoutTime.getTime())) {
+		return '-';
+	}
+	
+	const diff = timeoutTime.getTime() - now.getTime();
+	
+	if (diff <= 0) {
+		return '已过期';
+	}
+	
+	const hours = Math.floor(diff / (1000 * 60 * 60));
+	const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+	
+	if (hours > 0) {
+		return `${hours}小时${minutes}分钟`;
+	} else {
+		return `${minutes}分钟`;
+	}
+};
+
+// 获取时间显示
+const getTimeDisplay = (item) => {
+	if (activeTab.value === 'completed') {
+		return item.completeTime;
+	} else if (activeTab.value === 'ongoing') {
+		return calculateRemainingTime(item.expireTimeRaw);
+	} else {
+		return item.expireTime;
+	}
 };
 
 onMounted(async () => {
@@ -367,6 +409,11 @@ onMounted(async () => {
 	font-size: $font-sm;
 	color: $text-primary;
 	font-weight: 500;
+}
+
+.countdown {
+	color: #ff7a45;
+	font-weight: 600;
 }
 
 .protagonist {
