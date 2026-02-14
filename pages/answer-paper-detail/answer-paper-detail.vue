@@ -199,10 +199,12 @@ const showRewardedVideoAd = () => {
 };
 
 // 状态映射
+// 1: 答题中(ongoing), 2: 已完成(completed), 3: 已放弃(given_up), 4: 已超时(expired)
 const statusMap = {
 	1: 'ongoing',
-	2: 'expired',
-	3: 'completed'
+	2: 'completed',
+	3: 'expired',
+	4: 'expired'
 };
 
 const statusTextMap = {

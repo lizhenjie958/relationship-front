@@ -74,10 +74,10 @@
 						<input
 							v-model="paperName"
 							class="form-input"
-							placeholder="请输入试卷名称（最多10个字）"
-							maxlength="10"
+							placeholder="请输入试卷名称（最多20个字）"
+							maxlength="20"
 						/>
-						<text class="char-count">{{ paperName.length }}/10</text>
+						<text class="char-count">{{ paperName.length }}/20</text>
 					</view>
 				</view>
 				<view class="popup-footer">
@@ -307,9 +307,9 @@ const confirmPaperName = async () => {
 
 		console.log('生成试题响应:', response);
 
-		if (response && response.code === 200 && response.id) {
+		if (response && response.code === 200 && response.data && response.data.id) {
 			// 保存试卷ID
-			currentExamPaperId.value = response.id;
+			currentExamPaperId.value = response.data.id;
 			generatingQuestion.value = false;
 			showQuestionDialog.value = true;
 		} else {
